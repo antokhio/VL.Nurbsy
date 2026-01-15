@@ -1,4 +1,4 @@
-﻿namespace Nurbsy
+﻿namespace Nurbsy.Helpers
 {
     public static class NurbsCurveHelper
     {

@@ -2,9 +2,9 @@
 {
     public static class Validate
     {
-        public static void Argument(bool isInvalid, string nameOf, string message)
+        public static void Argument(bool isValid, string nameOf, string message)
         {
-            if (isInvalid)
+            if (!isValid)
                 throw new ArgumentOutOfRangeException(nameOf, message);
         }
 

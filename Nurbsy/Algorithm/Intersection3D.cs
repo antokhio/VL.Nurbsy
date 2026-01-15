@@ -111,7 +111,7 @@ namespace Nurbsy.Algorithm
             dotNormalDir = Math.Clamp(dotNormalDir, -1.0, 1.0);
             double angle = Math.Acos(dotNormalDir);
 
-            if (MathUtils.IsAlmostEqualTo(angle, Math.PI / 2))
+            if (MathUtils.IsAlmostEqualTo(angle, Constants.Pi / 2))
             {
                 intersectPoint = Vector3.Zero;
                 return LinePlaneIntersectionType.Parallel;

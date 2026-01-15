@@ -21,19 +21,10 @@ namespace Nurbsy
             Check();
         }
 
-        public NurbsCurve(int degree, IReadOnlyList<T> points)
+        public NurbsCurve(int degree, IReadOnlyList<T> controlPoints, IReadOnlyList<double> knots)
         {
             Degree = degree;
-            ControlPoints = points.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray();
-            Knots = NurbsCurveHelper.GenerateClampedKnots(Degree, ControlPoints.Count);
-
-            Check();
-        }
-
-        public NurbsCurve(int degree, IReadOnlyList<T> points, IReadOnlyList<double> knots)
-        {
-            Degree = degree;
-            ControlPoints = points.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray();
+            ControlPoints = controlPoints.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray();
             Knots = knots;
 
             Check();
@@ -91,6 +82,8 @@ namespace Nurbsy
             if (count == 2)
                 return true;
 
+            float tolerance = (float)Constants.DoubleEpsilon;
+
             if (typeof(T) == typeof(Vector2))
             {
                 var p0_t = ControlPoints[0].Value;
@@ -103,7 +96,7 @@ namespace Nurbsy
                     var pi_t = ControlPoints[i].Value;
                     var pi = Unsafe.As<T, Vector2>(ref pi_t);
                     v0 = pi - p0;
-                    if (v0.LengthSquared() > MathUtil.ZeroTolerance)
+                    if (v0.LengthSquared() > tolerance)
                         break;
                 }
 
@@ -120,7 +113,7 @@ namespace Nurbsy
 
                     // 2D Cross Product (Z component)
                     float cross = v0.X * vk.Y - v0.Y * vk.X;
-                    if (Math.Abs(cross) > MathUtil.ZeroTolerance)
+                    if (Math.Abs(cross) > tolerance)
                         return false;
                 }
                 return true;
@@ -137,7 +130,7 @@ namespace Nurbsy
                     var pi_t = ControlPoints[i].Value;
                     var pi = Unsafe.As<T, Vector3>(ref pi_t);
                     v0 = pi - p0;
-                    if (v0.LengthSquared() > MathUtil.ZeroTolerance)
+                    if (v0.LengthSquared() > tolerance)
                         break;
                 }
 
@@ -153,7 +146,7 @@ namespace Nurbsy
                     var vk = pk - p0;
 
                     var cross = Vector3.Cross(v0, vk);
-                    if (cross.LengthSquared() > MathUtil.ZeroTolerance * MathUtil.ZeroTolerance)
+                    if (cross.LengthSquared() > tolerance * tolerance)
                         return false;
                 }
                 return true;

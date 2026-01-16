@@ -926,6 +926,613 @@ namespace Nurbsy.Helpers
             return false;
         }
 
+        public static bool RemoveKnot(
+            NurbsCurve<Vector2> curve,
+            double removeKnot,
+            int times,
+            out NurbsCurve<Vector2> result
+        )
+        {
+            int degree = curve.Degree;
+            var knotVector = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Range(
+                removeKnot,
+                knotVector[0],
+                knotVector[knotVector.Count - 1],
+                nameof(removeKnot)
+            );
+            Validate.Argument(times > 0, nameof(times), "Times must be greater than zero.");
+
+            double tol = ComputeCurveModifyTolerance(controlPoints);
+            int n = controlPoints.Count - 1;
+
+            int order = degree + 1;
+            int s = Polynomials.GetKnotMultiplicity(knotVector, removeKnot);
+            int r = Polynomials.GetKnotSpanIndex(degree, knotVector, removeKnot);
+
+            int first = r - degree;
+            int last = r - s;
+
+            var restKnotVector = new List<double>(knotVector);
+            int m = n + degree + 1;
+            // The algorithm modifies restKnotVector. In C++: restKnotVector[k - times] = restKnotVector[k];
+            // Since we need to modify in-place shifting elements, convert to array or list ops.
+            // But loop runs r+1 to m. K starts after insertion point.
+            // Actually it removes 'times' knots.
+            for (int k = r + 1; k <= m; k++)
+            {
+                restKnotVector[k - times] = restKnotVector[k];
+            }
+            // Remove last 'times' elements
+            restKnotVector.RemoveRange(restKnotVector.Count - times, times);
+
+            // Working with homogeneous coordinates W*P
+            var updatedControlPoints = new ControlPoint<Vector2>[controlPoints.Count];
+            for (int k = 0; k < controlPoints.Count; k++)
+                updatedControlPoints[k] = controlPoints[k];
+
+            var temp = new Vector3[2 * degree + 1];
+
+            int t = 0;
+            for (t = 0; t < times; t++)
+            {
+                int off = first - 1;
+                // Load temp
+                var cpOff = updatedControlPoints[off];
+                temp[0] = new Vector3(cpOff.Value * (float)cpOff.Weight, (float)cpOff.Weight);
+
+                var cpLast = updatedControlPoints[last + 1];
+                temp[last + 1 - off] = new Vector3(
+                    cpLast.Value * (float)cpLast.Weight,
+                    (float)cpLast.Weight
+                );
+
+                int i = first;
+                int j = last;
+                int ii = 1;
+                int jj = last - off;
+                bool remflag = false;
+
+                while (j - i >= t)
+                {
+                    double alphai =
+                        (removeKnot - knotVector[i]) / (knotVector[i + order + t] - knotVector[i]);
+                    double alphaj =
+                        (removeKnot - knotVector[j - t])
+                        / (knotVector[j + order] - knotVector[j - t]);
+
+                    temp[ii] =
+                        (
+                            new Vector3(
+                                updatedControlPoints[i].Value
+                                    * (float)updatedControlPoints[i].Weight,
+                                (float)updatedControlPoints[i].Weight
+                            )
+                            - (float)(1.0 - alphai) * temp[ii - 1]
+                        ) / (float)alphai;
+
+                    temp[jj] =
+                        (
+                            new Vector3(
+                                updatedControlPoints[j].Value
+                                    * (float)updatedControlPoints[j].Weight,
+                                (float)updatedControlPoints[j].Weight
+                            )
+                            - (float)alphaj * temp[jj + 1]
+                        ) / (float)(1.0 - alphaj);
+
+                    i++;
+                    ii++;
+                    j--;
+                    jj--;
+                }
+
+                if (j - i < t)
+                {
+                    if (
+                        MathUtils.IsLessThanOrEqual(
+                            Vector3.Distance(temp[ii - 1], temp[jj + 1]),
+                            tol
+                        )
+                    )
+                    {
+                        remflag = true;
+                    }
+                }
+                else
+                {
+                    double alphai =
+                        (removeKnot - knotVector[i]) / (knotVector[i + order + t] - knotVector[i]);
+                    var cpI = updatedControlPoints[i];
+                    var vecI = new Vector3(cpI.Value * (float)cpI.Weight, (float)cpI.Weight);
+                    var checkVec =
+                        (float)alphai * temp[ii + t + 1] + (float)(1.0 - alphai) * temp[ii - 1];
+                    if (MathUtils.IsLessThanOrEqual(Vector3.Distance(vecI, checkVec), tol))
+                    {
+                        remflag = true;
+                    }
+                }
+
+                if (!remflag)
+                {
+                    // t indicates how many were successfully removed so far (from logic flow in typical algo)
+                    // but here t is loop index. If fail, we break.
+                    break;
+                }
+
+                i = first;
+                j = last;
+
+                while (j - i > t)
+                {
+                    // Convert back from Homogeneous to ControlPoint
+                    var tI = temp[i - off];
+                    updatedControlPoints[i] = MathUtils.IsZero(tI.Z)
+                        ? new ControlPoint<Vector2>(Vector2.Zero, 0)
+                        : new ControlPoint<Vector2>(new Vector2(tI.X, tI.Y) / tI.Z, tI.Z);
+
+                    var tJ = temp[j - off];
+                    updatedControlPoints[j] = MathUtils.IsZero(tJ.Z)
+                        ? new ControlPoint<Vector2>(Vector2.Zero, 0)
+                        : new ControlPoint<Vector2>(new Vector2(tJ.X, tJ.Y) / tJ.Z, tJ.Z);
+
+                    i++;
+                    j--;
+                }
+
+                first--;
+                last++;
+            }
+
+            if (t == 0)
+            {
+                result = curve;
+                return false;
+            }
+
+            // Adjust control points array
+            // Shift points
+            int jj2 = (2 * r - s - degree) / 2;
+            int ii2 = jj2;
+
+            for (int k = 1; k < t; k++)
+            {
+                if (k % 2 == 1)
+                    ii2++;
+                else
+                    jj2--;
+            }
+
+            var finalCPs = new List<ControlPoint<Vector2>>(updatedControlPoints);
+            // We need to implement the final shift properly on the list or array
+            // Loops k from i+1 to n. Where i is ii2.
+            // updatedControlPoints[j] = controlPoints[k]
+            // j starts at jj2.
+            int currJ = jj2;
+            for (int k = ii2 + 1; k <= n; k++)
+            {
+                updatedControlPoints[currJ] = controlPoints[k]; // Use ORIGINAL points for the tail?
+                // C++: updatedControlPoints[j] = controlPoints[k]; where controlPoints is the original reference
+                currJ++;
+            }
+
+            finalCPs = new List<ControlPoint<Vector2>>(updatedControlPoints);
+            // Remove last t elements
+            finalCPs.RemoveRange(finalCPs.Count - t, t);
+
+            result = new NurbsCurve<Vector2>(degree, finalCPs, restKnotVector);
+            return true;
+        }
+
+        public static NurbsCurve<Vector2> RemoveExcessiveKnots(NurbsCurve<Vector2> curve)
+        {
+            var result = curve;
+            var map = KnotsUtils.GetInternalKnotMultiplicityMap(curve.Knots);
+
+            // Iterate over map
+            foreach (var kvp in map)
+            {
+                double u = kvp.Key;
+                int count = kvp.Value;
+
+                if (RemoveKnot(result, u, count, out var tempResult))
+                {
+                    result = tempResult;
+                }
+            }
+            return result;
+        }
+
+        public static NurbsCurve<Vector2> ElevateDegree(NurbsCurve<Vector2> curve, int times)
+        {
+            var degree = curve.Degree;
+            var knotVector = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Argument(times > 0, nameof(times), "Times must be greater than zero.");
+
+            int n = controlPoints.Count - 1;
+            int m = n + degree + 1;
+            int ph = degree + times;
+            int ph2 = ph / 2;
+
+            var bezalfs = new double[degree + times + 1][];
+            for (int i = 0; i < bezalfs.Length; i++)
+                bezalfs[i] = new double[degree + 1];
+
+            bezalfs[0][0] = 1.0;
+            bezalfs[ph][degree] = 1.0;
+
+            for (int i = 1; i <= ph2; i++)
+            {
+                double inv = 1.0 / MathUtils.Binomial(ph, i);
+                int mpi = Math.Min(degree, i);
+
+                for (int j = Math.Max(0, i - times); j <= mpi; j++)
+                {
+                    bezalfs[i][j] =
+                        inv * MathUtils.Binomial(degree, j) * MathUtils.Binomial(times, i - j);
+                }
+            }
+
+            for (int i = ph2 + 1; i <= ph - 1; i++)
+            {
+                int mpi = Math.Min(degree, i);
+                for (int j = Math.Max(0, i - times); j <= mpi; j++)
+                {
+                    bezalfs[i][j] = bezalfs[ph - i][degree - j];
+                }
+            }
+
+            int mh = ph;
+            int kind = ph + 1;
+            int r = -1;
+            int a = degree;
+            int b = degree + 1;
+            int cind = 1;
+            double ua = knotVector[0];
+
+            int moresize = controlPoints.Count + controlPoints.Count * times;
+            var updatedControlPoints = new List<Vector3>(
+                Enumerable.Repeat(
+                    new Vector3(
+                        (float)Constants.MaxDistance,
+                        (float)Constants.MaxDistance,
+                        (float)Constants.MaxDistance
+                    ),
+                    moresize
+                )
+            );
+
+            // Convert CP to Homogeneous
+            updatedControlPoints[0] = new Vector3(
+                controlPoints[0].Value * (float)controlPoints[0].Weight,
+                (float)controlPoints[0].Weight
+            );
+
+            var updatedKnotVector = new List<double>(
+                Enumerable.Repeat(Constants.MaxDistance, moresize + ph + 1)
+            );
+            for (int i = 0; i <= ph; i++)
+            {
+                updatedKnotVector[i] = ua;
+            }
+
+            var bpts = new Vector3[degree + 1];
+            for (int i = 0; i <= degree; i++)
+                bpts[i] = new Vector3(
+                    controlPoints[i].Value * (float)controlPoints[i].Weight,
+                    (float)controlPoints[i].Weight
+                );
+
+            var nextbpts = new Vector3[degree]; // degree - 1 capacity needed, but safer
+
+            // Re-implement loop
+            while (b < m)
+            {
+                int i = b;
+                while (b < m && MathUtils.IsAlmostEqualTo(knotVector[b], knotVector[b + 1]))
+                {
+                    b++;
+                }
+                int mul = b - i + 1;
+                mh += mul + times;
+                double ub = knotVector[b];
+
+                int oldr = r;
+                r = degree - mul;
+
+                int lbz = oldr > 0 ? (oldr + 2) / 2 : 1;
+                int rbz = r > 0 ? ph - (r + 1) / 2 : ph;
+
+                if (r > 0)
+                {
+                    double numer = ub - ua;
+                    var alfs = new double[degree];
+                    for (int k = degree; k > mul; k--)
+                    {
+                        alfs[k - mul - 1] = numer / (knotVector[a + k] - ua);
+                    }
+                    for (int j = 1; j <= r; j++)
+                    {
+                        int save = r - j;
+                        int s = mul + j;
+                        for (int k = degree; k >= s; k--)
+                        {
+                            bpts[k] =
+                                (float)alfs[k - s] * bpts[k]
+                                + (float)(1.0 - alfs[k - s]) * bpts[k - 1];
+                        }
+                        nextbpts[save] = bpts[degree];
+                    }
+                }
+
+                var ebpts = new Vector3[degree + times + 1];
+                for (int ii = lbz; ii <= ph; ii++)
+                {
+                    ebpts[ii] = Vector3.Zero;
+                    int mpi = Math.Min(degree, ii);
+                    for (int j = Math.Max(0, ii - times); j <= mpi; j++)
+                    {
+                        ebpts[ii] += (float)bezalfs[ii][j] * bpts[j];
+                    }
+                }
+
+                if (oldr > 1)
+                {
+                    int first = kind - 2;
+                    int last = kind;
+                    double den = ub - ua;
+                    double bet = (ub - updatedKnotVector[kind - 1]) / den;
+
+                    for (int tr = 1; tr < oldr; tr++)
+                    {
+                        int ii = first;
+                        int jj = last;
+                        int kj = jj - kind + 1;
+
+                        while (jj - ii > tr)
+                        {
+                            if (ii < cind)
+                            {
+                                double alf =
+                                    (ub - updatedKnotVector[ii]) / (ua - updatedKnotVector[ii]);
+                                updatedControlPoints[ii] =
+                                    (float)alf * updatedControlPoints[ii]
+                                    + (float)(1.0 - alf) * updatedControlPoints[ii - 1];
+                            }
+
+                            if (jj >= lbz)
+                            {
+                                if (jj - tr <= kind - ph + oldr)
+                                {
+                                    double gam = (ub - updatedKnotVector[jj - tr]) / den;
+                                    ebpts[kj] =
+                                        (float)gam * ebpts[kj] + (float)(1.0 - gam) * ebpts[kj + 1];
+                                }
+                                else
+                                {
+                                    ebpts[kj] =
+                                        (float)bet * ebpts[kj] + (float)(1.0 - bet) * ebpts[kj + 1];
+                                }
+                            }
+                            ii++;
+                            jj--;
+                            kj--;
+                        }
+                        first--;
+                        last++;
+                    }
+                }
+
+                if (a != degree)
+                {
+                    for (int ii = 0; ii < ph - oldr; ii++)
+                    {
+                        updatedKnotVector[kind++] = ua;
+                    }
+                }
+
+                for (int j = lbz; j <= rbz; j++)
+                {
+                    if (cind >= updatedControlPoints.Count)
+                        updatedControlPoints.Add(ebpts[j]);
+                    else
+                        updatedControlPoints[cind] = ebpts[j];
+                    cind++;
+                }
+
+                if (b < m)
+                {
+                    for (int j = 0; j < r; j++)
+                        bpts[j] = nextbpts[j];
+                    for (int j = r; j <= degree; j++)
+                    {
+                        var cp = controlPoints[b - degree + j];
+                        bpts[j] = new Vector3(cp.Value * (float)cp.Weight, (float)cp.Weight);
+                    }
+                    a = b;
+                    b++;
+                    ua = ub;
+                }
+                else
+                {
+                    for (int ii = 0; ii <= ph; ii++)
+                        updatedKnotVector[kind + ii] = ub;
+                }
+            }
+
+            // Cleanup
+            for (int i = updatedControlPoints.Count - 1; i > 0; i--)
+            {
+                if (
+                    MathUtils.IsAlmostEqualTo(
+                        updatedControlPoints[i].X,
+                        (float)Constants.MaxDistance
+                    )
+                    && MathUtils.IsAlmostEqualTo(
+                        updatedControlPoints[i].Y,
+                        (float)Constants.MaxDistance
+                    )
+                    && MathUtils.IsAlmostEqualTo(
+                        updatedControlPoints[i].Z,
+                        (float)Constants.MaxDistance
+                    )
+                )
+                {
+                    updatedControlPoints.RemoveAt(i);
+                    continue;
+                }
+                break;
+            }
+            for (int i = updatedKnotVector.Count - 1; i > 0; i--)
+            {
+                if (MathUtils.IsAlmostEqualTo(updatedKnotVector[i], Constants.MaxDistance))
+                {
+                    updatedKnotVector.RemoveAt(i);
+                    continue;
+                }
+                break;
+            }
+
+            var finalControlPoints = new List<ControlPoint<Vector2>>();
+            foreach (var h in updatedControlPoints)
+            {
+                if (MathUtils.IsZero(h.Z))
+                    finalControlPoints.Add(new ControlPoint<Vector2>(Vector2.Zero, 0));
+                else
+                    finalControlPoints.Add(
+                        new ControlPoint<Vector2>(new Vector2(h.X, h.Y) / h.Z, h.Z)
+                    );
+            }
+
+            return new NurbsCurve<Vector2>(ph, finalControlPoints, updatedKnotVector);
+        }
+
+        public static bool ReduceDegree(NurbsCurve<Vector2> curve, out NurbsCurve<Vector2> result)
+        {
+            result = default;
+            int degree = curve.Degree;
+            var knotVector = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            double tol = ComputeCurveModifyTolerance(controlPoints);
+            int size = controlPoints.Count;
+            bool isBezier = Validate.IsValidBezier(degree, size);
+
+            if (!isBezier)
+                return false;
+
+            int r = (degree - 1) / 2;
+            var updatedControlPoints = new Vector3[degree]; // Homogeneous
+
+            // cp[0]
+            var cp0 = controlPoints[0];
+            updatedControlPoints[0] = new Vector3(cp0.Value * (float)cp0.Weight, (float)cp0.Weight);
+            var cpDeg = controlPoints[degree];
+            updatedControlPoints[degree - 1] = new Vector3(
+                cpDeg.Value * (float)cpDeg.Weight,
+                (float)cpDeg.Weight
+            );
+
+            // Need working array for homogeneous CPs of original curve
+            var homCP = new Vector3[size];
+            for (int i = 0; i < size; i++)
+            {
+                var cp = controlPoints[i];
+                homCP[i] = new Vector3(cp.Value * (float)cp.Weight, (float)cp.Weight);
+            }
+
+            var alpha = new double[degree];
+            for (int i = 0; i < degree; i++)
+                alpha[i] = (double)i / degree;
+
+            double error = 0.0;
+            if (degree % 2 == 0)
+            {
+                for (int i = 1; i <= r; i++)
+                {
+                    updatedControlPoints[i] =
+                        (homCP[i] - (float)alpha[i] * updatedControlPoints[i - 1])
+                        / (float)(1.0 - alpha[i]);
+                }
+                for (int i = degree - 2; i > r; i--)
+                {
+                    updatedControlPoints[i] =
+                        (homCP[i + 1] - (float)(1.0 - alpha[i + 1]) * updatedControlPoints[i + 1])
+                        / (float)alpha[i + 1];
+                }
+
+                var midP = (updatedControlPoints[r] + updatedControlPoints[r + 1]) * 0.5f;
+                error = Vector3.Distance(homCP[r + 1], midP);
+                double c = MathUtils.Binomial(degree, r + 1);
+                error = error * (c * Math.Pow(0.5, r + 1) * Math.Pow(0.5, degree - r - 1));
+            }
+            else
+            {
+                for (int i = 1; i < r; i++)
+                {
+                    updatedControlPoints[i] =
+                        (homCP[i] - (float)alpha[i] * updatedControlPoints[i - 1])
+                        / (float)(1.0 - alpha[i]);
+                }
+                for (int i = degree - 2; i > r; i--)
+                {
+                    updatedControlPoints[i] =
+                        (homCP[i + 1] - (float)(1.0 - alpha[i + 1]) * updatedControlPoints[i + 1])
+                        / (float)alpha[i + 1];
+                }
+
+                var PLr =
+                    (homCP[r] - (float)alpha[r] * updatedControlPoints[r - 1])
+                    / (float)(1.0 - alpha[r]);
+                var PRr =
+                    (homCP[r + 1] - (float)(1.0 - alpha[r + 1]) * updatedControlPoints[r + 1])
+                    / (float)alpha[r + 1];
+                updatedControlPoints[r] = (PLr + PRr) * 0.5f;
+                error = Vector3.Distance(PLr, PRr);
+                double maxU = (degree - Math.Sqrt(degree)) / (2 * degree);
+                error =
+                    error
+                    * 0.5
+                    * (1 - alpha[r])
+                    * (
+                        MathUtils.Binomial(degree, r)
+                        * Math.Pow(maxU, r)
+                        * Math.Pow(1 - maxU, r + 1)
+                        * (1 - 2 * maxU)
+                    );
+            }
+
+            if (error > tol)
+                return false;
+
+            var map = KnotsUtils.GetKnotMultiplicityMap(knotVector);
+            var updatedKnotVector = new List<double>();
+            // Sorted iteration is preferred
+            var sortedKeys = map.Keys.OrderBy(k => k).ToList();
+            foreach (var u in sortedKeys)
+            {
+                int count = map[u] - 1;
+                for (int i = 0; i < count; i++)
+                    updatedKnotVector.Add(u);
+            }
+
+            var finalCPs = new List<ControlPoint<Vector2>>();
+            foreach (var h in updatedControlPoints)
+            {
+                if (MathUtils.IsZero(h.Z))
+                    finalCPs.Add(new ControlPoint<Vector2>(Vector2.Zero, 0));
+                else
+                    finalCPs.Add(new ControlPoint<Vector2>(new Vector2(h.X, h.Y) / h.Z, h.Z));
+            }
+
+            result = new NurbsCurve<Vector2>(degree - 1, finalCPs, updatedKnotVector);
+            return true;
+        }
+
         private static void ComputeDerivatives(
             NurbsCurve<Vector2> curve,
             int derivative,
@@ -968,6 +1575,28 @@ namespace Nurbsy.Helpers
                     result[k] += (float)nders[k][j] * pw;
                 }
             }
+        }
+
+        private static double ComputeCurveModifyTolerance(
+            IReadOnlyList<ControlPoint<Vector2>> controlPoints
+        )
+        {
+            double minWeight = 1.0;
+            double maxDistance = 0.0;
+
+            for (int i = 0; i < controlPoints.Count; i++)
+            {
+                var cp = controlPoints[i];
+                if (cp.Weight < minWeight)
+                    minWeight = cp.Weight;
+
+                // C++: temp.ToXYZ(true).Length() -> Euclidean Length of point
+                double len = cp.Value.Length();
+                if (len > maxDistance)
+                    maxDistance = len;
+            }
+
+            return Constants.DistanceEpsilon * minWeight / (1.0 + Math.Abs(maxDistance));
         }
     }
 }

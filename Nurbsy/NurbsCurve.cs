@@ -428,6 +428,98 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public bool RemoveKnot(double removeKnot, int times, out NurbsCurve<T> result)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                if (NurbsCurve2DHelper.RemoveKnot(curve2, removeKnot, times, out var res2))
+                {
+                    result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                result = default; // Should be curve copy?
+                return false;
+            }
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                if (NurbsCurve3DHelper.RemoveKnot(curve3, removeKnot, times, out var res3))
+                {
+                    result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public NurbsCurve<T> RemoveExcessiveKnots()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.RemoveExcessiveKnots(curve2);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.RemoveExcessiveKnots(curve3);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public NurbsCurve<T> ElevateDegree(int times)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.ElevateDegree(curve2, times);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.ElevateDegree(curve3, times);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public bool ReduceDegree(out NurbsCurve<T> result)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                if (NurbsCurve2DHelper.ReduceDegree(curve2, out var res2))
+                {
+                    result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                if (NurbsCurve3DHelper.ReduceDegree(curve3, out var res3))
+                {
+                    result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool IsLinear()
         {
             if (typeof(T) == typeof(Vector2))

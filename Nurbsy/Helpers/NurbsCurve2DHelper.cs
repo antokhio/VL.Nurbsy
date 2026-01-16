@@ -142,6 +142,107 @@ namespace Nurbsy.Helpers
             return derivatives;
         }
 
+        public static NurbsCurve<Vector2> RefineKnotVector(
+            NurbsCurve<Vector2> curve,
+            IReadOnlyList<double> insertKnotElements
+        )
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Argument(
+                insertKnotElements != null && insertKnotElements.Count > 0,
+                "insertKnotElements",
+                "insertKnotElements size must be greater than zero."
+            );
+
+            int n = controlPoints.Count - 1;
+            int m = n + degree + 1;
+            int r = insertKnotElements.Count - 1;
+
+            int a = Polynomials.GetKnotSpanIndex(degree, knots, insertKnotElements[0]);
+            int b = Polynomials.GetKnotSpanIndex(degree, knots, insertKnotElements[r]) + 1;
+
+            var insertedKnotVector = new double[m + r + 2];
+            for (int j = 0; j <= a; j++)
+            {
+                insertedKnotVector[j] = knots[j];
+            }
+            for (int j = b + degree; j <= m; j++)
+            {
+                insertedKnotVector[j + r + 1] = knots[j];
+            }
+
+            var updatedControlPoints = new ControlPoint<Vector2>[n + r + 2];
+            for (int j = 0; j <= a - degree; j++)
+            {
+                updatedControlPoints[j] = controlPoints[j];
+            }
+            for (int j = b - 1; j <= n; j++)
+            {
+                updatedControlPoints[j + r + 1] = controlPoints[j];
+            }
+
+            int i = b + degree - 1;
+            int k = b + degree + r;
+
+            for (int j = r; j >= 0; j--)
+            {
+                while (i > a && insertKnotElements[j] <= knots[i])
+                {
+                    updatedControlPoints[k - degree - 1] = controlPoints[i - degree - 1];
+                    insertedKnotVector[k] = knots[i];
+                    k = k - 1;
+                    i = i - 1;
+                }
+
+                updatedControlPoints[k - degree - 1] = updatedControlPoints[k - degree];
+
+                for (int l = 1; l <= degree; l++)
+                {
+                    int ind = k - degree + l;
+                    double alpha = insertedKnotVector[k + l] - insertKnotElements[j];
+
+                    if (MathUtils.IsAlmostEqualTo(Math.Abs(alpha), 0.0))
+                    {
+                        updatedControlPoints[ind - 1] = updatedControlPoints[ind];
+                    }
+                    else
+                    {
+                        alpha = alpha / (insertedKnotVector[k + l] - knots[i - degree + l]);
+
+                        var cp1 = updatedControlPoints[ind - 1];
+                        var cp2 = updatedControlPoints[ind];
+
+                        Vector3 v1 = new Vector3(cp1.Value * (float)cp1.Weight, (float)cp1.Weight);
+                        Vector3 v2 = new Vector3(cp2.Value * (float)cp2.Weight, (float)cp2.Weight);
+
+                        Vector3 mixed = (float)alpha * v1 + (float)(1.0 - alpha) * v2;
+
+                        if (MathUtils.IsZero(mixed.Z))
+                        {
+                            updatedControlPoints[ind - 1] = new ControlPoint<Vector2>(
+                                Vector2.Zero,
+                                0
+                            );
+                        }
+                        else
+                        {
+                            updatedControlPoints[ind - 1] = new ControlPoint<Vector2>(
+                                new Vector2(mixed.X, mixed.Y) / mixed.Z,
+                                mixed.Z
+                            );
+                        }
+                    }
+                }
+                insertedKnotVector[k] = insertKnotElements[j];
+                k = k - 1;
+            }
+
+            return new NurbsCurve<Vector2>(degree, updatedControlPoints, insertedKnotVector);
+        }
+
         public static IReadOnlyList<BezierCurve<Vector2>> DecomposeToBeziers(
             NurbsCurve<Vector2> curve
         )
@@ -308,214 +409,6 @@ namespace Nurbsy.Helpers
             }
 
             return (tessellatedPoints, correspondingKnots);
-        }
-
-        public static double GetParamOnCurve(NurbsCurve<Vector2> curve, Vector2 givenPoint)
-        {
-            var degree = curve.Degree;
-            var knots = curve.Knots;
-            var controlPoints = curve.ControlPoints;
-
-            double minValue = Constants.MaxDistance;
-
-            int maxIterations = 10;
-            double paramT = Constants.DoubleEpsilon;
-            double minParam = knots[0];
-            double maxParam = knots[knots.Count - 1];
-
-            var (tessellatedPoints, correspondingKnots) = EquallyTessellate(curve);
-
-            for (int i = 0; i < tessellatedPoints.Count - 1; i++)
-            {
-                double currentU = correspondingKnots[i];
-                double nextU = correspondingKnots[i + 1];
-
-                Vector2 currentPoint = tessellatedPoints[i];
-                Vector2 nextPoint = tessellatedPoints[i + 1];
-
-                Vector2 diff1 = givenPoint - currentPoint;
-                Vector2 vector1 =
-                    diff1.LengthSquared() > MathUtil.ZeroTolerance
-                        ? Vector2.Normalize(diff1)
-                        : Vector2.Zero;
-
-                Vector2 diff2 = nextPoint - currentPoint;
-                Vector2 vector2 =
-                    diff2.LengthSquared() > MathUtil.ZeroTolerance
-                        ? Vector2.Normalize(diff2)
-                        : Vector2.Zero;
-
-                double dot = Vector2.Dot(vector1, vector2);
-
-                Vector2 projectPoint;
-                double projectU;
-
-                if (dot < 0.0)
-                {
-                    projectPoint = currentPoint;
-                    projectU = currentU;
-                }
-                else if (dot >= 1.0)
-                {
-                    projectPoint = nextPoint;
-                    projectU = nextU;
-                }
-                else
-                {
-                    projectPoint = currentPoint + (nextPoint - currentPoint) * (float)dot;
-                    projectU = currentU + (nextU - currentU) * dot;
-                }
-
-                double distance = (givenPoint - projectPoint).Length();
-                if (distance < minValue)
-                {
-                    minValue = distance;
-                    paramT = projectU;
-                }
-            }
-
-            bool isClosed = IsClosed(curve);
-            double a = minParam;
-            double b = maxParam;
-
-            int counters = 0;
-            while (counters < maxIterations)
-            {
-                var derivatives = ComputeRationalCurveDerivatives(curve, 2, paramT);
-                Vector2 difference = derivatives[0] - givenPoint;
-
-                Vector2 der1 = derivatives[1];
-                double f = Vector2.Dot(der1, difference);
-
-                double condition1 = difference.Length();
-                double der1Len = der1.Length();
-
-                double denom = der1Len * condition1;
-                double condition2 = MathUtils.IsZero(denom) ? 0.0 : Math.Abs(f / denom);
-
-                if (
-                    condition1 < Constants.DistanceEpsilon
-                    && condition2 < Constants.DistanceEpsilon
-                )
-                {
-                    return paramT;
-                }
-
-                Vector2 der2 = derivatives[2];
-                double df = Vector2.Dot(der2, difference) + Vector2.Dot(der1, der1);
-
-                double temp = paramT;
-                if (!MathUtils.IsZero(df))
-                {
-                    temp = paramT - f / df;
-                }
-
-                if (!isClosed)
-                {
-                    if (temp < a)
-                    {
-                        temp = a;
-                    }
-                    if (temp > b)
-                    {
-                        temp = b;
-                    }
-                }
-                else
-                {
-                    if (temp < a)
-                    {
-                        temp = b - (a - temp);
-                    }
-                    if (temp > b)
-                    {
-                        temp = a + (temp - b);
-                    }
-                }
-
-                double condition4 = ((temp - paramT) * derivatives[1]).Length();
-                if (condition4 < Constants.DistanceEpsilon)
-                {
-                    return paramT;
-                }
-
-                paramT = temp;
-                counters++;
-            }
-            return paramT;
-        }
-
-        public static NurbsCurve<Vector2> Reparametrize(
-            NurbsCurve<Vector2> curve,
-            double alpha,
-            double beta,
-            double gamma,
-            double delta
-        )
-        {
-            var degree = curve.Degree;
-            var knots = curve.Knots;
-            var controlPoints = curve.ControlPoints;
-
-            Validate.Argument(
-                MathUtils.IsGreaterThan(alpha * delta, gamma * beta),
-                "coefficient",
-                "(alpha * delta - gamma * beta) must be greater than zero"
-            );
-
-            var updatedKnotVector = new double[knots.Count];
-            for (int i = 0; i < knots.Count; i++)
-            {
-                updatedKnotVector[i] = (alpha * knots[i] + beta) / (gamma * knots[i] + delta);
-            }
-
-            var updatedControlPoints = new ControlPoint<Vector2>[controlPoints.Count];
-            for (int i = 0; i < controlPoints.Count; i++)
-            {
-                double temp = 1.0;
-                for (int j = 1; j <= degree; j++)
-                {
-                    double lambda = updatedKnotVector[i + j] * gamma - alpha;
-                    temp = temp * lambda;
-                }
-                double newW = Math.Abs(controlPoints[i].Weight * temp);
-                updatedControlPoints[i] = new ControlPoint<Vector2>
-                {
-                    Value = controlPoints[i].Value,
-                    Weight = newW,
-                };
-            }
-
-            return new NurbsCurve<Vector2>(degree, updatedControlPoints, updatedKnotVector);
-        }
-
-        public static NurbsCurve<Vector2> Reparametrize(
-            NurbsCurve<Vector2> curve,
-            double min,
-            double max
-        )
-        {
-            var knots = curve.Knots;
-
-            if (
-                MathUtils.IsAlmostEqualTo(min, knots[0])
-                && MathUtils.IsAlmostEqualTo(max, knots[knots.Count - 1])
-            )
-            {
-                return curve;
-            }
-
-            var newKnotVector = new double[knots.Count];
-            double oldMin = knots[0];
-            double oldMax = knots[knots.Count - 1];
-            double scale = (max - min) / (oldMax - oldMin);
-
-            for (int i = 0; i < knots.Count; i++)
-            {
-                newKnotVector[i] = min + (knots[i] - oldMin) * scale;
-            }
-
-            return new NurbsCurve<Vector2>(curve.Degree, curve.ControlPoints, newKnotVector);
         }
 
         public static bool CanComputeDerivative(NurbsCurve<Vector2> curve, double paramT)
@@ -694,6 +587,343 @@ namespace Nurbsy.Helpers
             }
 
             return true;
+        }
+
+        public static NurbsCurve<Vector2> Reparametrize(
+            NurbsCurve<Vector2> curve,
+            double alpha,
+            double beta,
+            double gamma,
+            double delta
+        )
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Argument(
+                (alpha * delta - gamma * beta) > 0.0,
+                "coefficient",
+                "(alpha * delta - gamma * beta) must be greater than zero"
+            );
+
+            var updatedKnotVector = new double[knots.Count];
+            for (int i = 0; i < knots.Count; i++)
+            {
+                updatedKnotVector[i] = (alpha * knots[i] + beta) / (gamma * knots[i] + delta);
+            }
+
+            var updatedControlPoints = new ControlPoint<Vector2>[controlPoints.Count];
+            for (int i = 0; i < controlPoints.Count; i++)
+            {
+                double temp = 1.0;
+                for (int j = 1; j <= degree; j++)
+                {
+                    double lambda = updatedKnotVector[i + j] * gamma - alpha;
+                    temp = temp * lambda;
+                }
+
+                double oldW = controlPoints[i].Weight;
+                double newW = Math.Abs(oldW * temp);
+
+                updatedControlPoints[i] = new ControlPoint<Vector2>(controlPoints[i].Value, newW);
+            }
+
+            return new NurbsCurve<Vector2>(degree, updatedControlPoints, updatedKnotVector);
+        }
+
+        public static NurbsCurve<Vector2> Reparametrize(
+            NurbsCurve<Vector2> curve,
+            double min,
+            double max
+        )
+        {
+            var knots = curve.Knots;
+            if (
+                MathUtils.IsAlmostEqualTo(min, knots[0])
+                && MathUtils.IsAlmostEqualTo(max, knots[knots.Count - 1])
+            )
+            {
+                return curve;
+            }
+
+            double currentMin = knots[0];
+            double currentMax = knots[knots.Count - 1];
+            double scale = (max - min) / (currentMax - currentMin);
+
+            var newKnots = new double[knots.Count];
+            for (int i = 0; i < knots.Count; i++)
+            {
+                newKnots[i] = min + (knots[i] - currentMin) * scale;
+            }
+
+            return new NurbsCurve<Vector2>(curve.Degree, curve.ControlPoints, newKnots);
+        }
+
+        public static NurbsCurve<Vector2> Reverse(NurbsCurve<Vector2> curve)
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            int size = knots.Count;
+            var reversedKnots = new double[size];
+            double min = knots[0];
+
+            reversedKnots[0] = min;
+            for (int i = 1; i < size; i++)
+            {
+                reversedKnots[i] = reversedKnots[i - 1] + (knots[size - i] - knots[size - i - 1]);
+            }
+
+            var reversedCPs = new List<ControlPoint<Vector2>>(controlPoints);
+            reversedCPs.Reverse();
+
+            return new NurbsCurve<Vector2>(degree, reversedCPs, reversedKnots);
+        }
+
+        public static double GetParamOnCurve(NurbsCurve<Vector2> curve, Vector2 givenPoint)
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            double minValue = Constants.MaxDistance;
+
+            int maxIterations = 10;
+            double paramT = Constants.DoubleEpsilon;
+            double minParam = knots[0];
+            double maxParam = knots[knots.Count - 1];
+
+            var (tessellatedPoints, correspondingKnots) = EquallyTessellate(curve);
+
+            for (int i = 0; i < tessellatedPoints.Count - 1; i++)
+            {
+                double currentU = correspondingKnots[i];
+                double nextU = correspondingKnots[i + 1];
+
+                Vector2 currentPoint = tessellatedPoints[i];
+                Vector2 nextPoint = tessellatedPoints[i + 1];
+
+                Vector2 diff1 = givenPoint - currentPoint;
+                Vector2 vector1 =
+                    diff1.LengthSquared() > MathUtil.ZeroTolerance
+                        ? Vector2.Normalize(diff1)
+                        : Vector2.Zero;
+
+                Vector2 diff2 = nextPoint - currentPoint;
+                Vector2 vector2 =
+                    diff2.LengthSquared() > MathUtil.ZeroTolerance
+                        ? Vector2.Normalize(diff2)
+                        : Vector2.Zero;
+
+                double dot = Vector2.Dot(vector1, vector2);
+
+                Vector2 projectPoint;
+                double projectU;
+
+                if (dot < 0.0)
+                {
+                    projectPoint = currentPoint;
+                    projectU = currentU;
+                }
+                else if (dot >= 1.0)
+                {
+                    projectPoint = nextPoint;
+                    projectU = nextU;
+                }
+                else
+                {
+                    projectPoint = currentPoint + (nextPoint - currentPoint) * (float)dot;
+                    projectU = currentU + (nextU - currentU) * dot;
+                }
+
+                double distance = (givenPoint - projectPoint).Length();
+                if (distance < minValue)
+                {
+                    minValue = distance;
+                    paramT = projectU;
+                }
+            }
+
+            bool isClosed = IsClosed(curve);
+            double a = minParam;
+            double b = maxParam;
+
+            int counters = 0;
+            while (counters < maxIterations)
+            {
+                var derivatives = ComputeRationalCurveDerivatives(curve, 2, paramT);
+                Vector2 difference = derivatives[0] - givenPoint;
+                Vector2 der1 = derivatives[1];
+                double f = Vector2.Dot(der1, difference);
+
+                double condition1 = difference.Length();
+                double der1Len = der1.Length();
+
+                double denom = der1Len * condition1;
+                double condition2 = MathUtils.IsZero(denom) ? 0.0 : Math.Abs(f / denom);
+
+                if (
+                    condition1 < Constants.DistanceEpsilon
+                    && condition2 < Constants.DistanceEpsilon
+                )
+                {
+                    return paramT;
+                }
+
+                Vector2 der2 = derivatives[2];
+                double df = Vector2.Dot(der2, difference) + Vector2.Dot(der1, der1);
+
+                double temp = paramT;
+                if (!MathUtils.IsZero(df))
+                {
+                    temp = paramT - f / df;
+                }
+
+                if (!isClosed)
+                {
+                    if (temp < a)
+                        temp = a;
+                    if (temp > b)
+                        temp = b;
+                }
+                else
+                {
+                    if (temp < a)
+                        temp = b - (a - temp);
+                    if (temp > b)
+                        temp = a + (temp - b);
+                }
+
+                double condition4 = ((temp - paramT) * derivatives[1]).Length();
+                if (condition4 < Constants.DistanceEpsilon)
+                {
+                    return paramT;
+                }
+
+                paramT = temp;
+                counters++;
+            }
+            return paramT;
+        }
+
+        public static bool SplitAt(
+            NurbsCurve<Vector2> curve,
+            double parameter,
+            out NurbsCurve<Vector2> left,
+            out NurbsCurve<Vector2> right
+        )
+        {
+            int degree = curve.Degree;
+            var knots = curve.Knots;
+
+            left = default;
+            right = default;
+
+            if (parameter <= knots[degree] || parameter >= knots[knots.Count - degree - 1])
+            {
+                if (
+                    MathUtils.IsAlmostEqualTo(parameter, knots[degree])
+                    || parameter < knots[degree]
+                )
+                    return false;
+                if (
+                    MathUtils.IsAlmostEqualTo(parameter, knots[knots.Count - degree - 1])
+                    || parameter > knots[knots.Count - degree - 1]
+                )
+                    return false;
+            }
+
+            int multi = Polynomials.GetKnotMultiplicity(knots, parameter);
+            int needed = degree + 1 - multi;
+            var insert = new double[needed];
+            for (int k = 0; k < needed; k++)
+                insert[k] = parameter;
+
+            var tempLeft = curve;
+            if (needed > 0)
+            {
+                tempLeft = RefineKnotVector(curve, insert);
+            }
+
+            var lKnots = tempLeft.Knots;
+            var lCPs = tempLeft.ControlPoints;
+            int spanIndex =
+                Polynomials.GetKnotSpanIndex(tempLeft.Degree, lKnots, parameter) - degree;
+
+            int rControlPointsCount = lCPs.Count - spanIndex;
+            var rightCPs = new ControlPoint<Vector2>[rControlPointsCount];
+            var rightKnots = new double[rControlPointsCount + degree + 1];
+
+            for (int i = lCPs.Count - 1, j = rControlPointsCount - 1; j >= 0; j--, i--)
+            {
+                rightCPs[j] = lCPs[i];
+            }
+
+            for (int i = lKnots.Count - 1, j = rControlPointsCount + degree; j >= 0; j--, i--)
+            {
+                rightKnots[j] = lKnots[i];
+            }
+
+            right = new NurbsCurve<Vector2>(degree, rightCPs, rightKnots);
+
+            var leftCPs = new ControlPoint<Vector2>[spanIndex];
+            for (int i = 0; i < spanIndex; i++)
+                leftCPs[i] = lCPs[i];
+
+            var leftKnots = new double[spanIndex + degree + 1];
+            for (int i = 0; i < leftKnots.Length; i++)
+                leftKnots[i] = lKnots[i];
+
+            left = new NurbsCurve<Vector2>(degree, leftCPs, leftKnots);
+
+            return true;
+        }
+
+        public static bool Segment(
+            NurbsCurve<Vector2> curve,
+            double startParameter,
+            double endParameter,
+            out NurbsCurve<Vector2> segment
+        )
+        {
+            segment = default;
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+
+            bool startAtBeginning =
+                (startParameter < knots[degree])
+                || MathUtils.IsAlmostEqualTo(startParameter, knots[degree]);
+            bool endAtEnd =
+                (endParameter > knots[knots.Count - degree - 1])
+                || MathUtils.IsAlmostEqualTo(endParameter, knots[knots.Count - degree - 1]);
+
+            if (startAtBeginning)
+            {
+                if (endAtEnd)
+                {
+                    segment = curve;
+                    return true;
+                }
+
+                return SplitAt(curve, endParameter, out segment, out _);
+            }
+            else
+            {
+                if (endAtEnd)
+                {
+                    return SplitAt(curve, startParameter, out _, out segment);
+                }
+                else
+                {
+                    if (SplitAt(curve, startParameter, out _, out var right))
+                    {
+                        return SplitAt(right, endParameter, out segment, out _);
+                    }
+                }
+            }
+            return false;
         }
 
         private static void ComputeDerivatives(

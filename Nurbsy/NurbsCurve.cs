@@ -328,6 +328,106 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public NurbsCurve<T> RefineKnotVector(IReadOnlyList<double> insertKnotElements)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var refined2 = NurbsCurve2DHelper.RefineKnotVector(curve2, insertKnotElements);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref refined2);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var refined3 = NurbsCurve3DHelper.RefineKnotVector(curve3, insertKnotElements);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref refined3);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public NurbsCurve<T> Reverse()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.Reverse(curve2);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.Reverse(curve3);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public bool SplitAt(double parameter, out NurbsCurve<T> left, out NurbsCurve<T> right)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                if (NurbsCurve2DHelper.SplitAt(curve2, parameter, out var l2, out var r2))
+                {
+                    left = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref l2);
+                    right = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref r2);
+                    return true;
+                }
+                left = default;
+                right = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                if (NurbsCurve3DHelper.SplitAt(curve3, parameter, out var l3, out var r3))
+                {
+                    left = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref l3);
+                    right = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref r3);
+                    return true;
+                }
+                left = default;
+                right = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public bool Segment(double startParameter, double endParameter, out NurbsCurve<T> segment)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                if (NurbsCurve2DHelper.Segment(curve2, startParameter, endParameter, out var res2))
+                {
+                    segment = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                segment = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                if (NurbsCurve3DHelper.Segment(curve3, startParameter, endParameter, out var res3))
+                {
+                    segment = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                segment = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool IsLinear()
         {
             if (typeof(T) == typeof(Vector2))

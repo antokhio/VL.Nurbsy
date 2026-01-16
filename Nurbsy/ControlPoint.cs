@@ -12,7 +12,7 @@
             Weight = 1f;
         }
 
-        public ControlPoint(T value, float weight)
+        public ControlPoint(T value, double weight)
         {
             Value = value;
             Weight = weight;

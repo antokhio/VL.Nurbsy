@@ -2361,6 +2361,73 @@ namespace Nurbsy.Helpers
             return normals;
         }
 
+        public static bool ControlPointReposition(
+            NurbsCurve<Vector2> curve,
+            double parameter,
+            int moveIndex,
+            Vector2 moveDirection,
+            double moveDistance,
+            out NurbsCurve<Vector2> result
+        )
+        {
+            result = default;
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Range(parameter, knots[0], knots[knots.Count - 1], nameof(parameter));
+            Validate.Range(moveIndex, 0, controlPoints.Count - 1, nameof(moveIndex));
+            Validate.Argument(
+                !MathUtils.IsZero(moveDirection),
+                nameof(moveDirection),
+                "MoveDirection must not be zero vector."
+            );
+            Validate.Argument(
+                !MathUtils.IsAlmostEqualTo(moveDistance, 0.0),
+                nameof(moveDistance),
+                "MoveDistance must not be zero."
+            );
+
+            int spanIndex = Polynomials.GetKnotSpanIndex(degree, knots, parameter);
+
+            if (moveIndex < spanIndex - degree || moveIndex > spanIndex)
+            {
+                return false;
+            }
+
+            var basis = Polynomials.BasisFunctions(spanIndex, degree, knots, parameter);
+
+            double den = 0.0;
+            for (int i = 0; i <= degree; i++)
+            {
+                den += basis[i] * controlPoints[spanIndex - degree + i].Weight;
+            }
+
+            if (MathUtils.IsZero(den))
+                return false;
+
+            double num = basis[moveIndex - (spanIndex - degree)] * controlPoints[moveIndex].Weight;
+            double Rkp = num / den;
+
+            if (MathUtils.IsLessThan(Rkp, 0.0) || MathUtils.IsZero(Rkp))
+            {
+                return false;
+            }
+
+            var updatedControlPoints = new List<ControlPoint<Vector2>>(controlPoints);
+            Vector2 movePoint = controlPoints[moveIndex].Value;
+            double alpha = moveDistance / (moveDirection.Length() * Rkp);
+            Vector2 newPoint = movePoint + (float)alpha * moveDirection;
+
+            updatedControlPoints[moveIndex] = new ControlPoint<Vector2>(
+                newPoint,
+                controlPoints[moveIndex].Weight
+            );
+
+            result = new NurbsCurve<Vector2>(degree, updatedControlPoints, knots);
+            return true;
+        }
+
         public static bool IsLinear(NurbsCurve<Vector2> curve)
         {
             var count = curve.ControlPoints.Count;

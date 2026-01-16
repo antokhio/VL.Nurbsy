@@ -602,6 +602,61 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public bool ControlPointReposition(
+            double parameter,
+            int moveIndex,
+            T moveDirection,
+            double moveDistance,
+            out NurbsCurve<T> result
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                ref var dir2 = ref Unsafe.As<T, Vector2>(ref moveDirection);
+                if (
+                    NurbsCurve2DHelper.ControlPointReposition(
+                        curve2,
+                        parameter,
+                        moveIndex,
+                        dir2,
+                        moveDistance,
+                        out var res2
+                    )
+                )
+                {
+                    result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                ref var dir3 = ref Unsafe.As<T, Vector3>(ref moveDirection);
+                if (
+                    NurbsCurve3DHelper.ControlPointReposition(
+                        curve3,
+                        parameter,
+                        moveIndex,
+                        dir3,
+                        moveDistance,
+                        out var res3
+                    )
+                )
+                {
+                    result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool IsLinear()
         {
             if (typeof(T) == typeof(Vector2))

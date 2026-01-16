@@ -1537,6 +1537,161 @@ namespace Nurbsy.Helpers
             return RemoveKnotsByGivenBound(newtc, uk, errors, maxError, out curve);
         }
 
+        public static bool FitWithConic(
+            IReadOnlyList<Vector3> throughPoints,
+            int startPointIndex,
+            int endPointIndex,
+            Vector3 startTangent,
+            Vector3 endTangent,
+            double maxError,
+            List<ControlPoint<Vector3>> middleControlPoints
+        )
+        {
+            Validate.Argument(
+                throughPoints.Count > 0,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than zero."
+            );
+            Validate.Range(startPointIndex, 0, throughPoints.Count - 1, nameof(startPointIndex));
+            Validate.Range(
+                endPointIndex,
+                startPointIndex + 1,
+                throughPoints.Count - 1,
+                nameof(endPointIndex)
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(startTangent),
+                nameof(startTangent),
+                "StartTangent must not be zero vector."
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(endTangent),
+                nameof(endTangent),
+                "EndTangent must not be zero vector."
+            );
+
+            var startPoint = throughPoints[startPointIndex];
+            var endPoint = throughPoints[endPointIndex];
+
+            if (endPointIndex - startPointIndex == 1)
+            {
+                var computed = BezierCurve<Vector3>.ComputeMiddleControlPointsOnQuadraticCurve(
+                    startPoint,
+                    startTangent,
+                    endPoint,
+                    endTangent
+                );
+                if (computed != null)
+                {
+                    foreach (var cp in computed)
+                    {
+                        middleControlPoints.Add(cp);
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            var type = Intersection.ComputeRays(
+                startPoint,
+                startTangent,
+                endPoint,
+                endTangent,
+                out double alf1,
+                out double alf2,
+                out Vector3 R
+            );
+
+            if (type == CurveCurveIntersectionType.Coincident)
+            {
+                middleControlPoints.Add(
+                    new ControlPoint<Vector3>((startPoint + endPoint) * 0.5f, 1.0)
+                );
+                return true;
+            }
+            else if (
+                type == CurveCurveIntersectionType.Skew
+                || type == CurveCurveIntersectionType.Parallel
+            )
+            {
+                return false;
+            }
+
+            if (MathUtils.IsLessThanOrEqual(alf1, 0.0) || MathUtils.IsGreaterThanOrEqual(alf2, 0.0))
+            {
+                return false;
+            }
+
+            double s = 0.0;
+            Vector3 V = endPoint - startPoint;
+
+            for (int i = startPointIndex + 1; i <= endPointIndex - 1; i++)
+            {
+                Vector3 V1 = throughPoints[i] - R;
+                type = Intersection.ComputeRays(
+                    startPoint,
+                    V,
+                    R,
+                    V1,
+                    out double a1,
+                    out double a2,
+                    out Vector3 dummy
+                );
+
+                if (
+                    type != CurveCurveIntersectionType.Intersecting
+                    || MathUtils.IsLessThanOrEqual(a1, 0.0)
+                    || MathUtils.IsGreaterThanOrEqual(a1, 1.0)
+                    || MathUtils.IsLessThanOrEqual(a2, 0.0)
+                )
+                {
+                    return false;
+                }
+
+                if (
+                    CreateOneConicArc(
+                        startPoint,
+                        V,
+                        R,
+                        V1,
+                        throughPoints[i],
+                        out dummy,
+                        out double wi
+                    )
+                )
+                {
+                    s = s + wi / (1.0 + wi);
+                }
+            }
+
+            s = s / (endPointIndex - startPointIndex - 1);
+            double w = s / (1.0 - s);
+
+            var controlPoints = new ControlPoint<Vector3>[]
+            {
+                new ControlPoint<Vector3>(startPoint, 1.0),
+                new ControlPoint<Vector3>(R, w),
+                new ControlPoint<Vector3>(endPoint, 1.0),
+            };
+            var knotVectors = new double[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
+
+            var tc = new NurbsCurve<Vector3>(2, controlPoints, knotVectors);
+
+            for (int k = startPointIndex + 1; k <= endPointIndex - 1; k++)
+            {
+                var tp = throughPoints[k];
+                double param = GetParamOnCurve(tc, tp);
+                Vector3 point = GetPointOnCurve(tc, param);
+                if (MathUtils.IsGreaterThan((tp - point).Length(), maxError))
+                {
+                    return false;
+                }
+            }
+
+            middleControlPoints.Add(new ControlPoint<Vector3>(R, w));
+            return true;
+        }
+
         public static Vector3 GetPointOnCurve(NurbsCurve<Vector3> curve, double paramT)
         {
             var degree = curve.Degree;

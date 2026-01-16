@@ -2566,6 +2566,123 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static bool NeighborWeightsModification(
+            NurbsCurve<Vector3> curve,
+            double parameter,
+            int moveIndex,
+            double moveDistance,
+            double scale,
+            out NurbsCurve<Vector3> result
+        )
+        {
+            result = default;
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Range(parameter, knots[0], knots[knots.Count - 1], nameof(parameter));
+            Validate.Range(moveIndex, 0, controlPoints.Count - 2, nameof(moveIndex));
+            Validate.Argument(
+                !MathUtils.IsAlmostEqualTo(moveDistance, 0.0),
+                nameof(moveDistance),
+                "MoveDistance must not be zero."
+            );
+            Validate.Argument(
+                !MathUtils.IsAlmostEqualTo(scale, 0.0),
+                nameof(scale),
+                "Scale must not be zero."
+            );
+
+            var tempControlPoints = new List<ControlPoint<Vector3>>(controlPoints);
+            var movePoint1 = tempControlPoints[moveIndex].Value;
+            var movePoint2 = tempControlPoints[moveIndex + 1].Value;
+
+            tempControlPoints[moveIndex] = new ControlPoint<Vector3>(movePoint1, 0.0);
+            tempControlPoints[moveIndex + 1] = new ControlPoint<Vector3>(movePoint2, 0.0);
+
+            var tc = new NurbsCurve<Vector3>(degree, tempControlPoints, knots);
+            var R = GetPointOnCurve(tc, parameter);
+
+            var controlLeg = movePoint1 - movePoint2;
+            var controlLegLength = Vector3.Distance(movePoint1, movePoint2);
+
+            var P = GetPointOnCurve(curve, parameter);
+            var direction = R - P;
+
+            var type = Intersection.ComputeRays(
+                movePoint1,
+                controlLeg,
+                R,
+                direction,
+                out _,
+                out _,
+                out Vector3 Q
+            );
+
+            if (type != CurveCurveIntersectionType.Intersecting)
+                return false;
+
+            var pkq = Q - movePoint1;
+            var pk1q = Q - movePoint2;
+
+            double RQ = Vector3.Distance(Q, R);
+            double RP = Vector3.Distance(P, R);
+
+            if (MathUtils.IsZero(RP) || MathUtils.IsZero(RQ) || MathUtils.IsZero(controlLegLength))
+                return false;
+
+            double Rtarget = RP + moveDistance;
+            double qRP = RP / RQ;
+            double qRtarget = Rtarget / RQ;
+
+            var A = movePoint1 + (float)qRP * pkq;
+            var B = movePoint2 + (float)qRP * pk1q;
+            var C = movePoint1 + (float)qRtarget * pkq;
+            var D = movePoint2 + (float)qRtarget * pk1q;
+
+            double ak = Vector3.Distance(B, movePoint2) / controlLegLength;
+            double ak1 = Vector3.Distance(A, movePoint1) / controlLegLength;
+            double abk = Vector3.Distance(D, movePoint2) / controlLegLength;
+            double abk1 = Vector3.Distance(C, movePoint1) / controlLegLength;
+
+            if (
+                MathUtils.IsLessThan(Math.Abs(ak), 0.0)
+                || MathUtils.IsLessThan(Math.Abs(ak1), 0.0)
+                || MathUtils.IsLessThan(Math.Abs(abk), 0.0)
+                || MathUtils.IsLessThan(Math.Abs(abk1), 0.0)
+            )
+            {
+                return false;
+            }
+
+            double alpha = 1.0 - ak - ak1;
+            double beta = 1.0 - abk - abk1;
+
+            if (
+                MathUtils.IsZero(ak)
+                || MathUtils.IsZero(abk)
+                || MathUtils.IsZero(ak1)
+                || MathUtils.IsZero(abk1)
+            )
+                return false;
+
+            double betak = (alpha / ak) / (beta / abk);
+            double betak1 = (alpha / ak1) / (beta / abk1);
+
+            var updatedControlPoints = new List<ControlPoint<Vector3>>(controlPoints);
+            updatedControlPoints[moveIndex] = new ControlPoint<Vector3>(
+                movePoint1,
+                controlPoints[moveIndex].Weight * betak
+            );
+            updatedControlPoints[moveIndex + 1] = new ControlPoint<Vector3>(
+                movePoint2,
+                controlPoints[moveIndex + 1].Weight * betak1
+            );
+
+            result = new NurbsCurve<Vector3>(degree, updatedControlPoints, knots);
+            return true;
+        }
+
         public static bool IsLinear(NurbsCurve<Vector3> curve)
         {
             var count = curve.ControlPoints.Count;

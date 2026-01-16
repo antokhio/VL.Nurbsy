@@ -602,6 +602,37 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public static bool Merge(NurbsCurve<T> left, NurbsCurve<T> right, out NurbsCurve<T> result)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var l2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref left);
+                ref var r2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref right);
+                if (NurbsCurve2DHelper.Merge(l2, r2, out var res2))
+                {
+                    result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var l3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref left);
+                ref var r3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref right);
+                if (NurbsCurve3DHelper.Merge(l3, r3, out var res3))
+                {
+                    result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool ControlPointReposition(
             double parameter,
             int moveIndex,
@@ -657,6 +688,59 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public bool NeighborWeightsModification(
+            double parameter,
+            int moveIndex,
+            double moveDistance,
+            double scale,
+            out NurbsCurve<T> result
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                if (
+                    NurbsCurve2DHelper.NeighborWeightsModification(
+                        curve2,
+                        parameter,
+                        moveIndex,
+                        moveDistance,
+                        scale,
+                        out var res2
+                    )
+                )
+                {
+                    result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                if (
+                    NurbsCurve3DHelper.NeighborWeightsModification(
+                        curve3,
+                        parameter,
+                        moveIndex,
+                        moveDistance,
+                        scale,
+                        out var res3
+                    )
+                )
+                {
+                    result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool IsLinear()
         {
             if (typeof(T) == typeof(Vector2))
@@ -686,37 +770,6 @@ namespace Nurbsy
             {
                 ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
                 return NurbsCurve3DHelper.IsClosed(curve3);
-            }
-
-            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
-        }
-
-        public static bool Merge(NurbsCurve<T> left, NurbsCurve<T> right, out NurbsCurve<T> result)
-        {
-            if (typeof(T) == typeof(Vector2))
-            {
-                ref var l2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref left);
-                ref var r2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref right);
-                if (NurbsCurve2DHelper.Merge(l2, r2, out var res2))
-                {
-                    result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
-                    return true;
-                }
-                result = default;
-                return false;
-            }
-
-            if (typeof(T) == typeof(Vector3))
-            {
-                ref var l3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref left);
-                ref var r3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref right);
-                if (NurbsCurve3DHelper.Merge(l3, r3, out var res3))
-                {
-                    result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
-                    return true;
-                }
-                result = default;
-                return false;
             }
 
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");

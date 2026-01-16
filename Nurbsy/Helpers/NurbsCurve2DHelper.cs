@@ -340,6 +340,442 @@ namespace Nurbsy.Helpers
             return false;
         }
 
+        public static bool CreateOpenConic(
+            Vector2 start,
+            Vector2 startTangent,
+            Vector2 end,
+            Vector2 endTangent,
+            Vector2 pointOnConic,
+            out NurbsCurve<Vector2> curve
+        )
+        {
+            curve = default;
+            Validate.Argument(
+                !MathUtils.IsZero(startTangent),
+                nameof(startTangent),
+                "StartTangent must not be zero vector."
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(endTangent),
+                nameof(endTangent),
+                "EndTangent must not be zero vector."
+            );
+
+            if (
+                !CreateOneConicArc(
+                    start,
+                    startTangent,
+                    end,
+                    endTangent,
+                    pointOnConic,
+                    out var P1,
+                    out var w1
+                )
+            )
+            {
+                return false;
+            }
+
+            int nsegs = 0;
+            if (MathUtils.IsLessThanOrEqual(w1, -1.0))
+            {
+                return false;
+            }
+
+            if (MathUtils.IsGreaterThanOrEqual(w1, 1.0))
+            {
+                nsegs = 1;
+            }
+            else
+            {
+                // In 2D, angle logic is the same but need normalized vectors
+                var v1 = Vector2.Normalize(P1 - start);
+                var v2 = Vector2.Normalize(end - P1);
+                // Dot product for angle?
+                // The C++ code uses v1.AngleTo(v2).
+                // We'll compute angle using dot product + acos, ensuring safe clamping
+                double dot = Vector2.Dot(v1, v2);
+                if (dot > 1.0)
+                    dot = 1.0;
+                if (dot < -1.0)
+                    dot = -1.0;
+                double rad = Math.Acos(dot);
+
+                if (MathUtils.IsGreaterThan(w1, 0.0) && rad > MathUtil.DegreesToRadians(60))
+                {
+                    nsegs = 1;
+                }
+                else if (MathUtils.IsLessThan(w1, 0.0) && rad > MathUtil.DegreesToRadians(90))
+                {
+                    nsegs = 4;
+                }
+                else
+                {
+                    nsegs = 2;
+                }
+            }
+
+            int n = 2 * nsegs;
+            int j = 2 * nsegs + 1;
+
+            int degree = 2;
+            var knotVector = new double[j + degree + 1];
+            var controlPoints = new ControlPoint<Vector2>[n + 1];
+
+            // Clamped knots
+            for (int i = 0; i < 3; i++)
+            {
+                knotVector[i] = 0.0;
+                knotVector[i + j] = 1.0;
+            }
+
+            controlPoints[0] = new ControlPoint<Vector2>(start, 1.0);
+            controlPoints[n] = new ControlPoint<Vector2>(end, 1.0);
+
+            if (nsegs == 1)
+            {
+                controlPoints[1] = new ControlPoint<Vector2>(P1, w1);
+                curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+                return true;
+            }
+
+            SplitArc(start, P1, w1, end, out var Q1, out var S, out var R1, out var wqr);
+
+            if (nsegs == 2)
+            {
+                controlPoints[2] = new ControlPoint<Vector2>(S, 1.0);
+                controlPoints[1] = new ControlPoint<Vector2>(Q1, wqr);
+                controlPoints[3] = new ControlPoint<Vector2>(R1, wqr);
+
+                knotVector[3] = knotVector[4] = 0.5;
+                curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+                return true;
+            }
+
+            if (nsegs == 4)
+            {
+                controlPoints[4] = new ControlPoint<Vector2>(S, 1.0);
+                w1 = wqr;
+
+                SplitArc(start, Q1, w1, S, out var HQ1, out var HS, out var HR1, out wqr);
+                controlPoints[2] = new ControlPoint<Vector2>(HS, 1.0);
+                controlPoints[1] = new ControlPoint<Vector2>(HQ1, wqr);
+                controlPoints[3] = new ControlPoint<Vector2>(HR1, wqr);
+
+                SplitArc(S, R1, w1, end, out HQ1, out HS, out HR1, out wqr);
+                controlPoints[6] = new ControlPoint<Vector2>(HS, 1.0);
+                controlPoints[5] = new ControlPoint<Vector2>(HQ1, wqr);
+                controlPoints[7] = new ControlPoint<Vector2>(HR1, wqr);
+
+                for (int i = 0; i < 2; i++)
+                {
+                    knotVector[i + 3] = 0.25;
+                    knotVector[i + 5] = 0.5;
+                    knotVector[i + 7] = 0.75;
+                }
+                curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+                return true;
+            }
+            return false;
+        }
+
+        public static NurbsCurve<Vector2> GlobalInterpolation(
+            int degree,
+            IReadOnlyList<Vector2> throughPoints,
+            IReadOnlyList<double> parameters = null
+        )
+        {
+            Validate.Argument(
+                degree >= 0 && degree <= Constants.NURBSMaxDegree,
+                nameof(degree),
+                "Degree must be greater than or equal zero and not exceed the maximum degree."
+            );
+            Validate.Argument(
+                throughPoints.Count > degree,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than degree."
+            );
+
+            int size = throughPoints.Count;
+            int n = size - 1;
+
+            IReadOnlyList<double> uk;
+            if (parameters == null || parameters.Count == 0)
+            {
+                uk = Interpolation2D.GetChordParameterization(throughPoints);
+            }
+            else
+            {
+                Validate.Argument(
+                    parameters.Count == size,
+                    nameof(parameters),
+                    "Params size must be equal to throughPoints size."
+                );
+                uk = parameters;
+            }
+
+            var knotVector = Interpolation.AverageKnotVector(degree, uk);
+
+            var A = new double[size][];
+            for (int i = 0; i < size; i++)
+                A[i] = new double[size];
+
+            for (int i = 1; i < n; i++)
+            {
+                int spanIndex = Polynomials.GetKnotSpanIndex(degree, knotVector, uk[i]);
+                var basis = Polynomials.BasisFunctions(spanIndex, degree, knotVector, uk[i]);
+
+                for (int j = 0; j <= degree; j++)
+                {
+                    A[i][spanIndex - degree + j] = basis[j];
+                }
+            }
+            A[0][0] = 1.0;
+            A[n][n] = 1.0;
+
+            var right = new double[size][];
+            for (int i = 0; i < size; i++)
+            {
+                right[i] = new double[] { throughPoints[i].X, throughPoints[i].Y };
+            }
+
+            var solveRes = MathUtils.SolveLinearSystem(A, right);
+            var controlPoints = new ControlPoint<Vector2>[size];
+
+            for (int i = 0; i < solveRes.Length; i++)
+            {
+                var val = new Vector2((float)solveRes[i][0], (float)solveRes[i][1]);
+                controlPoints[i] = new ControlPoint<Vector2>(val, 1.0);
+            }
+
+            return new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+        }
+
+        public static NurbsCurve<Vector2> GlobalInterpolation(
+            int degree,
+            IReadOnlyList<Vector2> throughPoints,
+            IReadOnlyList<Vector2> tangents,
+            double tangentFactor
+        )
+        {
+            Validate.Argument(degree > 0, nameof(degree), "Degree must be greater than zero.");
+            Validate.Argument(
+                throughPoints.Count > degree,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than degree."
+            );
+            Validate.Argument(
+                MathUtils.IsGreaterThan(tangentFactor, 0.0),
+                nameof(tangentFactor),
+                "TangentFactor must be greater than zero."
+            );
+
+            int size = throughPoints.Count;
+            var unitTangents = new Vector2[tangents.Count];
+            for (int i = 0; i < tangents.Count; i++)
+            {
+                unitTangents[i] = Vector2.Normalize(tangents[i]);
+            }
+
+            int n = 2 * size;
+            var knotVector = new double[n + degree + 1];
+
+            double d = Interpolation2D.GetTotalChordLength(throughPoints);
+            var uk = Interpolation2D.GetChordParameterization(throughPoints);
+
+            switch (degree)
+            {
+                case 2:
+                    for (int i = 0; i <= degree; i++)
+                    {
+                        knotVector[i] = 0.0;
+                        knotVector[knotVector.Length - 1 - i] = 1.0;
+                    }
+                    for (int i = 0; i < size - 1; i++)
+                    {
+                        knotVector[2 * i + degree] = uk[i];
+                        knotVector[2 * i + degree + 1] = (uk[i] + uk[i + 1]) * 0.5;
+                    }
+                    break;
+                case 3:
+                    for (int i = 0; i <= degree; i++)
+                    {
+                        knotVector[i] = 0.0;
+                        knotVector[knotVector.Length - 1 - i] = 1.0;
+                    }
+                    for (int i = 1; i < size - 1; i++)
+                    {
+                        knotVector[degree + 2 * i] = (2 * uk[i] + uk[i + 1]) / 3.0;
+                        knotVector[degree + 2 * i + 1] = (uk[i] + 2 * uk[i + 1]) / 3.0;
+                    }
+                    knotVector[4] = uk[1] * 0.5;
+                    knotVector[knotVector.Length - degree - 2] = (uk[size - 1] + 1.0) * 0.5;
+                    break;
+                default:
+                    var uk2 = new double[2 * size];
+                    for (int i = 0; i < size - 1; i++)
+                    {
+                        uk2[2 * i] = uk[i];
+                        uk2[2 * i + 1] = (uk[i] + uk[i + 1]) * 0.5;
+                    }
+                    uk2[uk2.Length - 2] = (uk2[uk2.Length - 1] + uk2[uk2.Length - 3]) * 0.5;
+                    knotVector = Interpolation.AverageKnotVector(degree, uk2);
+                    break;
+            }
+
+            var A = new double[n][];
+            for (int i = 0; i < n; i++)
+                A[i] = new double[n];
+
+            for (int i = 1; i < size - 1; i++)
+            {
+                int spanIndex = Polynomials.GetKnotSpanIndex(degree, knotVector, uk[i]);
+                var basis = Polynomials.BasisFunctions(spanIndex, degree, knotVector, uk[i]);
+                var derBasis = Polynomials.BasisFunctionsDerivatives(
+                    spanIndex,
+                    degree,
+                    1,
+                    knotVector,
+                    uk[i]
+                );
+
+                for (int j = 0; j <= degree; j++)
+                {
+                    A[2 * i][spanIndex - degree + j] = basis[j];
+                    A[2 * i + 1][spanIndex - degree + j] = derBasis[1][j];
+                }
+            }
+
+            A[0][0] = 1.0;
+            A[1][0] = -1.0;
+            A[1][1] = 1.0;
+            A[n - 2][n - 2] = -1.0;
+            A[n - 2][n - 1] = 1.0;
+            A[n - 1][n - 1] = 1.0;
+
+            var right = new double[n][];
+            for (int i = 0; i < size; i++)
+            {
+                right[2 * i] = new double[] { throughPoints[i].X, throughPoints[i].Y };
+                right[2 * i + 1] = new double[] { unitTangents[i].X * d, unitTangents[i].Y * d };
+            }
+
+            double d0 = knotVector[degree + 1] / degree;
+            double dn = (1.0 - knotVector[knotVector.Length - degree - 2]) / degree;
+
+            var dp0 = unitTangents[0];
+            var dpn = unitTangents[tangents.Count - 1];
+            var qpn = throughPoints[size - 1];
+
+            right[1][0] = d0 * dp0.X * d;
+            right[1][1] = d0 * dp0.Y * d;
+
+            right[n - 2][0] = dn * dpn.X * d;
+            right[n - 2][1] = dn * dpn.Y * d;
+
+            right[n - 1][0] = qpn.X;
+            right[n - 1][1] = qpn.Y;
+
+            var solveRes = MathUtils.SolveLinearSystem(A, right);
+            var controlPoints = new ControlPoint<Vector2>[n];
+
+            for (int i = 0; i < solveRes.Length; i++)
+            {
+                var val = new Vector2((float)solveRes[i][0], (float)solveRes[i][1]);
+                controlPoints[i] = new ControlPoint<Vector2>(val, 1.0);
+            }
+
+            return new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+        }
+
+        public static bool CubicLocalInterpolation(
+            IReadOnlyList<Vector2> throughPoints,
+            out NurbsCurve<Vector2> curve
+        )
+        {
+            curve = default;
+            Validate.Argument(
+                throughPoints.Count > 0,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than zero."
+            );
+
+            if (!Interpolation.TryComputeTangents(throughPoints, out var tangents))
+            {
+                return false;
+            }
+
+            int size = throughPoints.Count;
+            int n = size - 1;
+            int degree = 3;
+
+            var uk = new double[size];
+            uk[0] = 0.0;
+
+            var tempControlPoints = new List<ControlPoint<Vector2>>(2 * n);
+
+            for (int k = 0; k < n; k++)
+            {
+                Vector2 t0 = tangents[k];
+                Vector2 t3 = tangents[k + 1];
+                Vector2 p0 = throughPoints[k];
+                Vector2 p3 = throughPoints[k + 1];
+
+                double a = 16.0 - (t0 + t3).LengthSquared();
+                double b = 12.0 * Vector2.Dot(p3 - p0, t0 + t3);
+                double c = -36.0 * (p3 - p0).LengthSquared();
+
+                double det = b * b - 4.0 * a * c;
+                if (det < 0)
+                    det = 0;
+                double alpha = (-b + Math.Sqrt(det)) / (2.0 * a);
+
+                var pk1 = p0 + (float)(alpha / 3.0) * t0;
+                var pk2 = p3 - (float)(alpha / 3.0) * t3;
+
+                uk[k + 1] = uk[k] + 3.0 * (pk1 - p0).Length();
+
+                tempControlPoints.Add(new ControlPoint<Vector2>(pk1, 1.0));
+                tempControlPoints.Add(new ControlPoint<Vector2>(pk2, 1.0));
+            }
+
+            int kvSize = 2 * degree + 2 * n;
+            var knotVector = new double[kvSize];
+
+            for (int i = 0; i <= degree; i++)
+            {
+                knotVector[i] = 0.0;
+            }
+
+            double maxUk = uk[n];
+            if (MathUtils.IsZero(maxUk))
+                maxUk = 1.0;
+
+            int currentKnot = degree + 1;
+            for (int i = 1; i < n; i++)
+            {
+                double val = uk[i] / maxUk;
+                knotVector[currentKnot++] = val;
+                knotVector[currentKnot++] = val;
+            }
+
+            for (int i = currentKnot; i < kvSize; i++)
+            {
+                knotVector[i] = 1.0;
+            }
+
+            var controlPoints = new ControlPoint<Vector2>[2 * n + 2];
+            controlPoints[0] = new ControlPoint<Vector2>(throughPoints[0], 1.0);
+            for (int i = 0; i < tempControlPoints.Count; i++)
+            {
+                controlPoints[i + 1] = tempControlPoints[i];
+            }
+            controlPoints[2 * n + 1] = new ControlPoint<Vector2>(throughPoints[n], 1.0);
+
+            curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+            return true;
+        }
+
         public static Vector2 GetPointOnCurve(NurbsCurve<Vector2> curve, double paramT)
         {
             var degree = curve.Degree;

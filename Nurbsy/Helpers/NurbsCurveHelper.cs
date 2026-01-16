@@ -164,6 +164,114 @@ namespace Nurbsy.Helpers
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public static bool CreateOpenConic<T>(
+            T start,
+            T startTangent,
+            T end,
+            T endTangent,
+            T pointOnConic,
+            out NurbsCurve<T> curve
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var s = Unsafe.As<T, Vector2>(ref start);
+                var st = Unsafe.As<T, Vector2>(ref startTangent);
+                var e = Unsafe.As<T, Vector2>(ref end);
+                var et = Unsafe.As<T, Vector2>(ref endTangent);
+                var pc = Unsafe.As<T, Vector2>(ref pointOnConic);
+
+                if (NurbsCurve2DHelper.CreateOpenConic(s, st, e, et, pc, out var res2))
+                {
+                    curve = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                curve = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var s = Unsafe.As<T, Vector3>(ref start);
+                var st = Unsafe.As<T, Vector3>(ref startTangent);
+                var e = Unsafe.As<T, Vector3>(ref end);
+                var et = Unsafe.As<T, Vector3>(ref endTangent);
+                var pc = Unsafe.As<T, Vector3>(ref pointOnConic);
+
+                if (NurbsCurve3DHelper.CreateOpenConic(s, st, e, et, pc, out var res3))
+                {
+                    curve = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                curve = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public static NurbsCurve<T> GlobalInterpolation<T>(
+            int degree,
+            IReadOnlyList<T> throughPoints,
+            IReadOnlyList<double> parameters = null
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref throughPoints);
+                var result = NurbsCurve2DHelper.GlobalInterpolation(degree, points, parameters);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref throughPoints);
+                var result = NurbsCurve3DHelper.GlobalInterpolation(degree, points, parameters);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public static NurbsCurve<T> GlobalInterpolation<T>(
+            int degree,
+            IReadOnlyList<T> throughPoints,
+            IReadOnlyList<T> tangents,
+            double tangentFactor = 1.0
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref throughPoints);
+                var tang = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref tangents);
+                var result = NurbsCurve2DHelper.GlobalInterpolation(
+                    degree,
+                    points,
+                    tang,
+                    tangentFactor
+                );
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref throughPoints);
+                var tang = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref tangents);
+                var result = NurbsCurve3DHelper.GlobalInterpolation(
+                    degree,
+                    points,
+                    tang,
+                    tangentFactor
+                );
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public static void SplitArc<T>(
             T start,
             T projectPoint,

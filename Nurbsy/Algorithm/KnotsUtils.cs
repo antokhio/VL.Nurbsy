@@ -101,5 +101,33 @@ namespace Nurbsy.Algorithm
             }
             return map;
         }
+
+        public static IReadOnlyList<double> AverageKnotVector(
+            int degree,
+            IReadOnlyList<double> parameters
+        )
+        {
+            int n = parameters.Count;
+            int m = n + degree + 1;
+            var knots = new double[m];
+
+            for (int i = 0; i <= degree; i++)
+            {
+                knots[i] = 0.0;
+                knots[m - 1 - i] = 1.0;
+            }
+
+            for (int j = 1; j < n - degree; j++)
+            {
+                double sum = 0.0;
+                for (int k = j; k < j + degree; k++)
+                {
+                    sum += parameters[k];
+                }
+                knots[j + degree] = sum / degree;
+            }
+
+            return knots;
+        }
     }
 }

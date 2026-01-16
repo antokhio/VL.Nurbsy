@@ -1598,5 +1598,84 @@ namespace Nurbsy.Helpers
 
             return Constants.DistanceEpsilon * minWeight / (1.0 + Math.Abs(maxDistance));
         }
+
+        public static bool Merge(
+            NurbsCurve<Vector2> left,
+            NurbsCurve<Vector2> right,
+            out NurbsCurve<Vector2> result
+        )
+        {
+            result = default;
+            var cpL = left.ControlPoints;
+            var cpR = right.ControlPoints;
+
+            if (cpL.Count == 0 || cpR.Count == 0)
+                return false;
+
+            // Check connectivity
+            if (!MathUtils.IsAlmostEqualTo(cpL[cpL.Count - 1].Value, cpR[0].Value))
+            {
+                return false;
+            }
+
+            int degree = Math.Max(left.Degree, right.Degree);
+
+            // Normalize Left to [0, 1]
+            var tempL = Reparametrize(left, 0.0, 1.0);
+            if (degree > left.Degree)
+            {
+                tempL = ElevateDegree(tempL, degree - left.Degree);
+                // Re-normalize after elevation (knots might change range or just structure)
+                // ElevateDegree keeps range but robust to re-ensure
+                tempL = Reparametrize(tempL, 0.0, 1.0);
+            }
+
+            // Normalize Right to [0, 1]
+            var tempR = Reparametrize(right, 0.0, 1.0);
+            if (degree > right.Degree)
+            {
+                tempR = ElevateDegree(tempR, degree - right.Degree);
+                tempR = Reparametrize(tempR, 0.0, 1.0);
+            }
+
+            // Check if clamped (multiplicity at ends)
+            // Left end
+            var kL = tempL.Knots;
+            int lMulti = Polynomials.GetKnotMultiplicity(kL, kL[kL.Count - 1]);
+            // Right start
+            var kR = tempR.Knots;
+            int rMulti = Polynomials.GetKnotMultiplicity(kR, kR[0]);
+
+            if (lMulti != degree + 1 || rMulti != degree + 1)
+            {
+                return false;
+            }
+
+            // Merge Control Points
+            var mergedPoints = new List<ControlPoint<Vector2>>(
+                tempL.ControlPoints.Count + tempR.ControlPoints.Count
+            );
+            mergedPoints.AddRange(tempL.ControlPoints);
+            mergedPoints.AddRange(tempR.ControlPoints);
+
+            // Merge Knots
+            // L is [0, 1]. R is [0, 1] -> shift R to [1, 2]
+            var shiftedR = Reparametrize(tempR, 1.0, 2.0);
+            var kRShift = shiftedR.Knots;
+
+            var mergedKnots = new List<double>(kL);
+            // Append knots from R, skipping the first (degree + 1) knots which are equal to 1.0
+            // Since L ends at 1.0 with (degree + 1) multiplicity, we just continue from there using R's internal + end knots.
+            for (int i = degree + 1; i < kRShift.Count; i++)
+            {
+                mergedKnots.Add(kRShift[i]);
+            }
+
+            // Rescale back to [0, 1]
+            var finalKnots = KnotsUtils.Rescale(mergedKnots, 0.0, 1.0);
+
+            result = new NurbsCurve<Vector2>(degree, mergedPoints, finalKnots);
+            return true;
+        }
     }
 }

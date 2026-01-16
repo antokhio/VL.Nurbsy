@@ -1672,5 +1672,70 @@ namespace Nurbsy.Helpers
 
             return Constants.DistanceEpsilon * minWeight / (1.0 + Math.Abs(maxDistance));
         }
+
+        public static bool Merge(
+            NurbsCurve<Vector3> left,
+            NurbsCurve<Vector3> right,
+            out NurbsCurve<Vector3> result
+        )
+        {
+            result = default;
+            var cpL = left.ControlPoints;
+            var cpR = right.ControlPoints;
+
+            if (cpL.Count == 0 || cpR.Count == 0)
+                return false;
+
+            if (!MathUtils.IsAlmostEqualTo(cpL[cpL.Count - 1].Value, cpR[0].Value))
+            {
+                return false;
+            }
+
+            int degree = Math.Max(left.Degree, right.Degree);
+
+            var tempL = Reparametrize(left, 0.0, 1.0);
+            if (degree > left.Degree)
+            {
+                tempL = ElevateDegree(tempL, degree - left.Degree);
+                tempL = Reparametrize(tempL, 0.0, 1.0);
+            }
+
+            var tempR = Reparametrize(right, 0.0, 1.0);
+            if (degree > right.Degree)
+            {
+                tempR = ElevateDegree(tempR, degree - right.Degree);
+                tempR = Reparametrize(tempR, 0.0, 1.0);
+            }
+
+            var kL = tempL.Knots;
+            int lMulti = Polynomials.GetKnotMultiplicity(kL, kL[kL.Count - 1]);
+            var kR = tempR.Knots;
+            int rMulti = Polynomials.GetKnotMultiplicity(kR, kR[0]);
+
+            if (lMulti != degree + 1 || rMulti != degree + 1)
+            {
+                return false;
+            }
+
+            var mergedPoints = new List<ControlPoint<Vector3>>(
+                tempL.ControlPoints.Count + tempR.ControlPoints.Count
+            );
+            mergedPoints.AddRange(tempL.ControlPoints);
+            mergedPoints.AddRange(tempR.ControlPoints);
+
+            var shiftedR = Reparametrize(tempR, 1.0, 2.0);
+            var kRShift = shiftedR.Knots;
+
+            var mergedKnots = new List<double>(kL);
+            for (int i = degree + 1; i < kRShift.Count; i++)
+            {
+                mergedKnots.Add(kRShift[i]);
+            }
+
+            var finalKnots = KnotsUtils.Rescale(mergedKnots, 0.0, 1.0);
+
+            result = new NurbsCurve<Vector3>(degree, mergedPoints, finalKnots);
+            return true;
+        }
     }
 }

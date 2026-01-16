@@ -1493,6 +1493,50 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static bool GlobalApproximationByErrorBound(
+            int degree,
+            IReadOnlyList<Vector3> throughPoints,
+            double maxError,
+            out NurbsCurve<Vector3> curve
+        )
+        {
+            curve = default;
+            Validate.Argument(degree > 0, nameof(degree), "Degree must be greater than zero.");
+            int size = throughPoints.Count;
+            Validate.Argument(
+                size > degree,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than degree."
+            );
+            Validate.Argument(
+                MathUtils.IsGreaterThan(maxError, 0.0),
+                nameof(maxError),
+                "Maxerror must be greater than zero."
+            );
+
+            var uk = Interpolation.GetChordParameterization(throughPoints);
+            var errors = new List<double>(new double[size]);
+
+            var controlPoints = new ControlPoint<Vector3>[size];
+            for (int i = 0; i < size; i++)
+            {
+                controlPoints[i] = new ControlPoint<Vector3>(throughPoints[i], 1.0);
+            }
+
+            var knotVector = new double[size + 2];
+            for (int i = 0; i < size; i++)
+            {
+                knotVector[i + 1] = uk[i];
+            }
+            knotVector[0] = 0.0;
+            knotVector[size + 1] = 1.0;
+
+            var tc = new NurbsCurve<Vector3>(1, controlPoints, knotVector);
+            var newtc = ElevateDegree(tc, degree - 1);
+
+            return RemoveKnotsByGivenBound(newtc, uk, errors, maxError, out curve);
+        }
+
         public static Vector3 GetPointOnCurve(NurbsCurve<Vector3> curve, double paramT)
         {
             var degree = curve.Degree;

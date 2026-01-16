@@ -337,6 +337,55 @@ namespace Nurbsy.Helpers
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public static bool GlobalApproximationByErrorBound<T>(
+            int degree,
+            IReadOnlyList<T> throughPoints,
+            double maxError,
+            out NurbsCurve<T> curve
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref throughPoints);
+                if (
+                    NurbsCurve2DHelper.GlobalApproximationByErrorBound(
+                        degree,
+                        points,
+                        maxError,
+                        out var res2
+                    )
+                )
+                {
+                    curve = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                curve = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref throughPoints);
+                if (
+                    NurbsCurve3DHelper.GlobalApproximationByErrorBound(
+                        degree,
+                        points,
+                        maxError,
+                        out var res3
+                    )
+                )
+                {
+                    curve = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                curve = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public static void SplitArc<T>(
             T start,
             T projectPoint,

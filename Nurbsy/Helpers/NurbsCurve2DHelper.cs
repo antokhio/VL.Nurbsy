@@ -776,6 +776,387 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static bool LeastSquaresApproximation(
+            int degree,
+            IReadOnlyList<Vector2> throughPoints,
+            int controlPointsCount,
+            out NurbsCurve<Vector2> curve
+        )
+        {
+            curve = default;
+            Validate.Argument(
+                degree >= 0 && degree <= Constants.NURBSMaxDegree,
+                nameof(degree),
+                "Degree must be greater than or equal zero and not exceed the maximum degree."
+            );
+            Validate.Argument(
+                controlPointsCount > degree,
+                nameof(controlPointsCount),
+                "ControlPointsCount must be greater than degree."
+            );
+
+            int n = controlPointsCount - 1;
+            int m = throughPoints.Count - 1;
+
+            if (m < degree)
+                return false;
+
+            var uk = Interpolation.GetChordParameterization(throughPoints);
+            var knotVector = Interpolation.ComputeKnotVector(degree, controlPointsCount, uk);
+
+            var start = new int[n - 1];
+            var end = new int[n - 1];
+            var index = new int[m - 1];
+
+            var B = new double[m - 1][];
+            for (int i = 0; i < m - 1; i++)
+                B[i] = new double[degree + 1];
+
+            int dim = n - 1;
+            if (dim <= 0)
+            {
+                if (controlPointsCount == 2)
+                {
+                    curve = CreateLine(throughPoints[0], throughPoints[m]);
+                    return true;
+                }
+                return false;
+            }
+
+            var NTN = new double[dim][];
+            for (int i = 0; i < dim; i++)
+                NTN[i] = new double[dim];
+
+            for (int i = 0; i <= Math.Min(degree - 1, dim - 1); i++)
+            {
+                start[i] = 0;
+            }
+            end[0] = -2;
+
+            int rj = degree;
+            int sj = degree - 1;
+            int ej = -2;
+
+            for (int i = 1; i <= m - 1; i++)
+            {
+                int j = Polynomials.GetKnotSpanIndex(degree, knotVector, uk[i]);
+                var N = Polynomials.BasisFunctions(j, degree, knotVector, uk[i]);
+
+                int l = (j == degree) ? 1 : 0;
+                int hk = (j == degree || j == n) ? degree - 1 : degree;
+
+                for (int k = 0; k <= hk; k++)
+                {
+                    B[i - 1][k] = N[l + k];
+                }
+
+                index[i - 1] = Math.Max(0, j - degree - 1);
+
+                if (j > rj)
+                {
+                    for (int k = 1; k <= j - rj; k++)
+                    {
+                        sj++;
+                        ej++;
+                        if (sj < dim)
+                            start[sj] = i - 1;
+                        if (ej >= 0)
+                            end[ej] = i - 2;
+                    }
+                    rj = j;
+                }
+            }
+
+            if (sj < dim - 1 || end[0] == -1)
+                return false;
+
+            for (int i = Math.Max(0, ej + 1); i < dim; i++)
+            {
+                end[i] = m - 2;
+            }
+
+            for (int i = 0; i < dim; i++)
+            {
+                int lj = Math.Max(0, i - degree);
+                int hj = Math.Min(dim - 1, i + degree);
+                for (int j = lj; j <= hj; j++)
+                {
+                    int lk = Math.Max(start[i], start[j]);
+                    int hk = Math.Min(end[i], end[j]);
+
+                    double sum = 0.0;
+                    for (int k = lk; k <= hk; k++)
+                    {
+                        sum += B[k][i - index[k]] * B[k][j - index[k]];
+                    }
+                    NTN[i][j] = sum;
+                }
+            }
+
+            var Rk = new Vector2[m - 1];
+            for (int k = 1; k <= m - 1; k++)
+            {
+                double n0 = Polynomials.OneBasisFunction(0, degree, knotVector, uk[k]);
+                double np = Polynomials.OneBasisFunction(n, degree, knotVector, uk[k]);
+                Rk[k - 1] =
+                    throughPoints[k] - (float)n0 * throughPoints[0] - (float)np * throughPoints[m];
+            }
+
+            var right = new double[dim][];
+            for (int i = 0; i < dim; i++)
+            {
+                Vector2 rSum = Vector2.Zero;
+                int lk = start[i];
+                int hk = end[i];
+
+                for (int k = lk; k <= hk; k++)
+                {
+                    rSum += Rk[k] * (float)B[k][i - index[k]];
+                }
+                right[i] = new double[] { rSum.X, rSum.Y };
+            }
+
+            try
+            {
+                var result = MathUtils.SolveLinearSystem(NTN, right);
+
+                var controlPoints = new ControlPoint<Vector2>[controlPointsCount];
+                controlPoints[0] = new ControlPoint<Vector2>(throughPoints[0], 1.0);
+                controlPoints[n] = new ControlPoint<Vector2>(throughPoints[m], 1.0);
+
+                for (int i = 1; i < n; i++)
+                {
+                    var row = result[i - 1];
+                    controlPoints[i] = new ControlPoint<Vector2>(
+                        new Vector2((float)row[0], (float)row[1]),
+                        1.0
+                    );
+                }
+
+                curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool WeightedAndContrainedLeastSquaresApproximation(
+            int degree,
+            IReadOnlyList<Vector2> throughPoints,
+            IReadOnlyList<double> throughPointWeights,
+            IReadOnlyList<Vector2> tangents,
+            IReadOnlyList<int> tangentIndices,
+            IReadOnlyList<double> tangentWeights,
+            int controlPointsCount,
+            out NurbsCurve<Vector2> curve
+        )
+        {
+            curve = default;
+            Validate.Argument(degree > 0, nameof(degree), "Degree must be greater than zero.");
+            int size = throughPoints.Count;
+            Validate.Argument(
+                size > degree,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than degree."
+            );
+            Validate.Argument(
+                throughPointWeights.Count == size,
+                nameof(throughPointWeights),
+                "Weights size must be equal to throughPoints size."
+            );
+
+            int ru = -1;
+            int rc = -1;
+            int r = size - 1;
+            for (int i = 0; i <= r; i++)
+            {
+                if (MathUtils.IsGreaterThan(throughPointWeights[i], 0.0))
+                    ru++;
+                else
+                    rc++;
+            }
+
+            int su = -1;
+            int sc = -1;
+            int s = tangents.Count - 1;
+            for (int j = 0; j <= s; j++)
+            {
+                if (MathUtils.IsGreaterThan(tangentWeights[j], 0.0))
+                    su++;
+                else
+                    sc++;
+            }
+
+            int mu = ru + su + 1;
+            int mc = rc + sc + 1;
+            int n = controlPointsCount - 1;
+
+            if (mc >= n || mc + n >= mu + 1)
+                return false;
+
+            var uk = Interpolation2D.GetChordParameterization(throughPoints);
+            var knotVector = Interpolation.ComputeKnotVector(degree, controlPointsCount, uk);
+            var controlPoints = new ControlPoint<Vector2>[controlPointsCount];
+
+            int tangentIdx = 0;
+            int mu2 = 0;
+            int mc2 = 0;
+
+            var N = new double[mu + 1][];
+            for (int k = 0; k <= mu; k++)
+                N[k] = new double[n + 1];
+
+            var M = new double[mc + 1][];
+            for (int k = 0; k <= mc; k++)
+                M[k] = new double[n + 1];
+
+            var S = new double[mu + 1][];
+            var T = new double[mc + 1][];
+
+            var W = new double[mu + 1];
+
+            for (int i = 0; i <= r; i++)
+            {
+                int spanIndex = Polynomials.GetKnotSpanIndex(degree, knotVector, uk[i]);
+
+                bool dflag = false;
+                if (tangentIdx <= s)
+                {
+                    if (i == tangentIndices[tangentIdx])
+                        dflag = true;
+                }
+
+                double[] funs0;
+                double[] funs1 = null;
+
+                if (!dflag)
+                {
+                    funs0 = Polynomials.BasisFunctions(spanIndex, degree, knotVector, uk[i]);
+                }
+                else
+                {
+                    var ders = Polynomials.BasisFunctionsDerivatives(
+                        spanIndex,
+                        degree,
+                        1,
+                        knotVector,
+                        uk[i]
+                    );
+                    funs0 = ders[0];
+                    funs1 = ders[1];
+                }
+
+                if (MathUtils.IsGreaterThan(throughPointWeights[i], 0.0))
+                {
+                    W[mu2] = throughPointWeights[i];
+                    for (int z = 0; z < funs0.Length; z++)
+                    {
+                        // BasisFunctions returns array of size degree+1 corresponding to spanIndex-degree..spanIndex
+                        // We map them to the global matrix column indices
+                        N[mu2][spanIndex - degree + z] = funs0[z];
+                    }
+                    var sp = throughPointWeights[i] * throughPoints[i];
+                    S[mu2] = new double[] { sp.X, sp.Y };
+                    mu2++;
+                }
+                else
+                {
+                    for (int z = 0; z < funs0.Length; z++)
+                    {
+                        M[mc2][spanIndex - degree + z] = funs0[z];
+                    }
+                    T[mc2] = new double[] { throughPoints[i].X, throughPoints[i].Y };
+                    mc2++;
+                }
+
+                if (dflag)
+                {
+                    if (MathUtils.IsGreaterThan(tangentWeights[tangentIdx], 0.0))
+                    {
+                        W[mu2] = tangentWeights[tangentIdx];
+                        for (int z = 0; z < funs1.Length; z++)
+                        {
+                            N[mu2][spanIndex - degree + z] = funs1[z];
+                        }
+                        var sp = tangentWeights[tangentIdx] * tangents[tangentIdx];
+                        S[mu2] = new double[] { sp.X, sp.Y };
+                        mu2++;
+                    }
+                    else
+                    {
+                        for (int z = 0; z < funs1.Length; z++)
+                        {
+                            M[mc2][spanIndex - degree + z] = funs1[z];
+                        }
+                        T[mc2] = new double[] { tangents[tangentIdx].X, tangents[tangentIdx].Y };
+                        mc2++;
+                    }
+                    tangentIdx++;
+                }
+            }
+
+            var tN = MathUtils.Transpose(N);
+            var W_ = MathUtils.MakeDiagonal(W);
+            var tNW = MathUtils.MatrixMultiply(tN, W_);
+            var tNWN = MathUtils.MatrixMultiply(tNW, N);
+
+            // S_ is already a matrix of (mu+1) rows and 2 columns
+            // But MathUtils expects double[][], which S is.
+            var tNWS = MathUtils.MatrixMultiply(tNW, S);
+
+            double[][] resultMatrix;
+
+            if (mc < 0)
+            {
+                resultMatrix = MathUtils.SolveLinearSystem(tNWN, tNWS);
+            }
+            else
+            {
+                if (!MathUtils.MakeInverse(tNWN, out var inv_tNWN))
+                    return false;
+
+                var tM = MathUtils.Transpose(M);
+
+                var Minv_tNWN = MathUtils.MatrixMultiply(M, inv_tNWN);
+                var Minv_tNWN_tM = MathUtils.MatrixMultiply(Minv_tNWN, tM);
+                var Minv_tNWN_tNWS = MathUtils.MatrixMultiply(Minv_tNWN, tNWS);
+
+                // Minv_tNWN_tNWS - T
+                var RhsA = new double[T.Length][];
+                for (int i = 0; i < T.Length; i++)
+                {
+                    RhsA[i] = new double[2];
+                    RhsA[i][0] = Minv_tNWN_tNWS[i][0] - T[i][0];
+                    RhsA[i][1] = Minv_tNWN_tNWS[i][1] - T[i][1];
+                }
+
+                var A = MathUtils.SolveLinearSystem(Minv_tNWN_tM, RhsA);
+                var tMA = MathUtils.MatrixMultiply(tM, A);
+
+                // tNWS - tMA
+                var RhsResult = new double[tNWS.Length][];
+                for (int i = 0; i < tNWS.Length; i++)
+                {
+                    RhsResult[i] = new double[2];
+                    RhsResult[i][0] = tNWS[i][0] - tMA[i][0];
+                    RhsResult[i][1] = tNWS[i][1] - tMA[i][1];
+                }
+
+                resultMatrix = MathUtils.MatrixMultiply(inv_tNWN, RhsResult);
+            }
+
+            for (int i = 0; i < resultMatrix.Length; i++)
+            {
+                var pt = new Vector2((float)resultMatrix[i][0], (float)resultMatrix[i][1]);
+                controlPoints[i] = new ControlPoint<Vector2>(pt, 1.0);
+            }
+
+            curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+            return true;
+        }
+
         public static Vector2 GetPointOnCurve(NurbsCurve<Vector2> curve, double paramT)
         {
             var degree = curve.Degree;

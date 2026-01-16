@@ -160,5 +160,88 @@ namespace Nurbsy.Algorithm
             }
             return res;
         }
+
+        public static double[][] Transpose(double[][] A)
+        {
+            int rows = A.Length;
+            int cols = A[0].Length;
+            var result = new double[cols][];
+            for (int i = 0; i < cols; i++)
+            {
+                result[i] = new double[rows];
+                for (int j = 0; j < rows; j++)
+                {
+                    result[i][j] = A[j][i];
+                }
+            }
+            return result;
+        }
+
+        public static double[][] MatrixMultiply(double[][] A, double[][] B)
+        {
+            int rowsA = A.Length;
+            int colsA = A[0].Length;
+            int rowsB = B.Length;
+            int colsB = B[0].Length;
+
+            if (colsA != rowsB)
+                throw new ArgumentException("Matrix dimensions do not match for multiplication.");
+
+            var result = new double[rowsA][];
+            for (int i = 0; i < rowsA; i++)
+            {
+                result[i] = new double[colsB];
+                for (int j = 0; j < colsB; j++)
+                {
+                    double sum = 0.0;
+                    for (int k = 0; k < colsA; k++)
+                    {
+                        sum += A[i][k] * B[k][j];
+                    }
+                    result[i][j] = sum;
+                }
+            }
+            return result;
+        }
+
+        public static double[][] Identity(int n)
+        {
+            var I = new double[n][];
+            for (int i = 0; i < n; i++)
+            {
+                I[i] = new double[n];
+                I[i][i] = 1.0;
+            }
+            return I;
+        }
+
+        public static bool MakeInverse(double[][] A, out double[][] inverse)
+        {
+            inverse = null;
+            try
+            {
+                int n = A.Length;
+                var identity = Identity(n);
+                // Solving Ax = I gives x = A^-1
+                inverse = SolveLinearSystem(A, identity);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static double[][] MakeDiagonal(IReadOnlyList<double> diag)
+        {
+            int n = diag.Count;
+            var M = new double[n][];
+            for (int i = 0; i < n; i++)
+            {
+                M[i] = new double[n];
+                M[i][i] = diag[i];
+            }
+            return M;
+        }
     }
 }

@@ -272,6 +272,71 @@ namespace Nurbsy.Helpers
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public static bool WeightedAndContrainedLeastSquaresApproximation<T>(
+            int degree,
+            IReadOnlyList<T> throughPoints,
+            IReadOnlyList<double> throughPointWeights,
+            IReadOnlyList<T> tangents,
+            IReadOnlyList<int> tangentIndices,
+            IReadOnlyList<double> tangentWeights,
+            int controlPointsCount,
+            out NurbsCurve<T> curve
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var tp = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref throughPoints);
+                var tg = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref tangents);
+
+                if (
+                    NurbsCurve2DHelper.WeightedAndContrainedLeastSquaresApproximation(
+                        degree,
+                        tp,
+                        throughPointWeights,
+                        tg,
+                        tangentIndices,
+                        tangentWeights,
+                        controlPointsCount,
+                        out var res2
+                    )
+                )
+                {
+                    curve = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                    return true;
+                }
+                curve = default;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var tp = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref throughPoints);
+                var tg = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref tangents);
+
+                if (
+                    NurbsCurve3DHelper.WeightedAndContrainedLeastSquaresApproximation(
+                        degree,
+                        tp,
+                        throughPointWeights,
+                        tg,
+                        tangentIndices,
+                        tangentWeights,
+                        controlPointsCount,
+                        out var res3
+                    )
+                )
+                {
+                    curve = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                    return true;
+                }
+                curve = default;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public static void SplitArc<T>(
             T start,
             T projectPoint,

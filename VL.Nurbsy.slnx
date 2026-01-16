@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.MD" />
+  </Folder>
   <Project Path="Nurbsy/Nurbsy.csproj" />
   <Project Path="VL.Nurbsy/src/VL.Nurbsy.csproj" />
 </Solution>

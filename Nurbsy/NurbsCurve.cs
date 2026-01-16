@@ -21,6 +21,19 @@ namespace Nurbsy
             Check();
         }
 
+        public NurbsCurve(
+            int degree,
+            IReadOnlyList<ControlPoint<T>> controlPoints,
+            IReadOnlyList<double> knots
+        )
+        {
+            Degree = degree;
+            ControlPoints = controlPoints;
+            Knots = knots;
+
+            Check();
+        }
+
         public NurbsCurve(int degree, IReadOnlyList<T> controlPoints, IReadOnlyList<double> knots)
         {
             Degree = degree;
@@ -74,85 +87,279 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
-        public bool IsLinear()
+        public T GetPointOnCurveByCornerCut(double paramT)
         {
-            var count = ControlPoints.Count;
-            if (count < 2)
-                return false;
-            if (count == 2)
-                return true;
-
-            float tolerance = (float)Constants.DoubleEpsilon;
-
             if (typeof(T) == typeof(Vector2))
             {
-                var p0_t = ControlPoints[0].Value;
-                var p0 = Unsafe.As<T, Vector2>(ref p0_t);
-                var v0 = Vector2.Zero;
-
-                int i = 1;
-                for (; i < ControlPoints.Count; i++)
-                {
-                    var pi_t = ControlPoints[i].Value;
-                    var pi = Unsafe.As<T, Vector2>(ref pi_t);
-                    v0 = pi - p0;
-                    if (v0.LengthSquared() > tolerance)
-                        break;
-                }
-
-                if (i == ControlPoints.Count)
-                    return true;
-
-                v0 = Vector2.Normalize(v0);
-
-                for (int k = 2; k < ControlPoints.Count; k++)
-                {
-                    var pk_t = ControlPoints[k].Value;
-                    var pk = Unsafe.As<T, Vector2>(ref pk_t);
-                    var vk = pk - p0;
-
-                    // 2D Cross Product (Z component)
-                    float cross = v0.X * vk.Y - v0.Y * vk.X;
-                    if (Math.Abs(cross) > tolerance)
-                        return false;
-                }
-                return true;
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.GetPointOnCurveByCornerCut(curve2, paramT);
+                return Unsafe.As<Vector2, T>(ref result);
             }
+
             if (typeof(T) == typeof(Vector3))
             {
-                var p0_t = ControlPoints[0].Value;
-                var p0 = Unsafe.As<T, Vector3>(ref p0_t);
-                var v0 = Vector3.Zero;
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.GetPointOnCurveByCornerCut(curve3, paramT);
+                return Unsafe.As<Vector3, T>(ref result);
+            }
 
-                int i = 1;
-                for (; i < ControlPoints.Count; i++)
-                {
-                    var pi_t = ControlPoints[i].Value;
-                    var pi = Unsafe.As<T, Vector3>(ref pi_t);
-                    v0 = pi - p0;
-                    if (v0.LengthSquared() > tolerance)
-                        break;
-                }
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
 
-                if (i == ControlPoints.Count)
-                    return true;
+        public IReadOnlyList<T> GetDerivatives(int derivative, double paramT)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.ComputeRationalCurveDerivatives(
+                    curve2,
+                    derivative,
+                    paramT
+                );
+                return Unsafe.As<IReadOnlyList<Vector2>, IReadOnlyList<T>>(ref result);
+            }
 
-                v0 = Vector3.Normalize(v0);
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.ComputeRationalCurveDerivatives(
+                    curve3,
+                    derivative,
+                    paramT
+                );
+                return Unsafe.As<IReadOnlyList<Vector3>, IReadOnlyList<T>>(ref result);
+            }
 
-                for (int k = 2; k < ControlPoints.Count; k++)
-                {
-                    var pk_t = ControlPoints[k].Value;
-                    var pk = Unsafe.As<T, Vector3>(ref pk_t);
-                    var vk = pk - p0;
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
 
-                    var cross = Vector3.Cross(v0, vk);
-                    if (cross.LengthSquared() > tolerance * tolerance)
-                        return false;
-                }
-                return true;
+        public bool CanComputeDerivative(double paramT)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                return NurbsCurve2DHelper.CanComputeDerivative(curve2, paramT);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                return NurbsCurve3DHelper.CanComputeDerivative(curve3, paramT);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public double GetCurvature(double paramT)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                return NurbsCurve2DHelper.GetCurvature(curve2, paramT);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                return NurbsCurve3DHelper.GetCurvature(curve3, paramT);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public double GetTorsion(double paramT)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                return NurbsCurve2DHelper.GetTorsion(curve2, paramT);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                return NurbsCurve3DHelper.GetTorsion(curve3, paramT);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public T GetNormal(CurveNormal normalType, double paramT)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.GetNormal(curve2, normalType, paramT);
+                return Unsafe.As<Vector2, T>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.GetNormal(curve3, normalType, paramT);
+                return Unsafe.As<Vector3, T>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public IReadOnlyList<T> ProjectNormal()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.ProjectNormal(curve2);
+                return Unsafe.As<IReadOnlyList<Vector2>, IReadOnlyList<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.ProjectNormal(curve3);
+                return Unsafe.As<IReadOnlyList<Vector3>, IReadOnlyList<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public IReadOnlyList<BezierCurve<T>> DecomposeToBeziers()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.DecomposeToBeziers(curve2);
+                return Unsafe.As<
+                    IReadOnlyList<BezierCurve<Vector2>>,
+                    IReadOnlyList<BezierCurve<T>>
+                >(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.DecomposeToBeziers(curve3);
+                return Unsafe.As<
+                    IReadOnlyList<BezierCurve<Vector3>>,
+                    IReadOnlyList<BezierCurve<T>>
+                >(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public (
+            IReadOnlyList<T> TessellatedPoints,
+            IReadOnlyList<double> CorrespondingKnots
+        ) EquallyTessellate()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var (pts, knots) = NurbsCurve2DHelper.EquallyTessellate(curve2);
+                var ptsT = Unsafe.As<IReadOnlyList<Vector2>, IReadOnlyList<T>>(ref pts);
+                return (ptsT, knots);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var (pts, knots) = NurbsCurve3DHelper.EquallyTessellate(curve3);
+                var ptsT = Unsafe.As<IReadOnlyList<Vector3>, IReadOnlyList<T>>(ref pts);
+                return (ptsT, knots);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public double GetParamOnCurve(T point)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                ref var p = ref Unsafe.As<T, Vector2>(ref point);
+                return NurbsCurve2DHelper.GetParamOnCurve(curve2, p);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                ref var p = ref Unsafe.As<T, Vector3>(ref point);
+                return NurbsCurve3DHelper.GetParamOnCurve(curve3, p);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public NurbsCurve<T> Reparametrize(double alpha, double beta, double gamma, double delta)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.Reparametrize(curve2, alpha, beta, gamma, delta);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.Reparametrize(curve3, alpha, beta, gamma, delta);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public NurbsCurve<T> Reparametrize(double min, double max)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.Reparametrize(curve2, min, max);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.Reparametrize(curve3, min, max);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public bool IsLinear()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                return NurbsCurve2DHelper.IsLinear(curve2);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                return NurbsCurve3DHelper.IsLinear(curve3);
             }
 
             return false;
+        }
+
+        public bool IsClosed()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                return NurbsCurve2DHelper.IsClosed(curve2);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                return NurbsCurve3DHelper.IsClosed(curve3);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
     }
 }

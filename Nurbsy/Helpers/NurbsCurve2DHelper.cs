@@ -1057,7 +1057,7 @@ namespace Nurbsy.Helpers
                         // We map them to the global matrix column indices
                         N[mu2][spanIndex - degree + z] = funs0[z];
                     }
-                    var sp = throughPointWeights[i] * throughPoints[i];
+                    var sp = (float)throughPointWeights[i] * throughPoints[i];
                     S[mu2] = new double[] { sp.X, sp.Y };
                     mu2++;
                 }
@@ -1080,7 +1080,7 @@ namespace Nurbsy.Helpers
                         {
                             N[mu2][spanIndex - degree + z] = funs1[z];
                         }
-                        var sp = tangentWeights[tangentIdx] * tangents[tangentIdx];
+                        var sp = (float)tangentWeights[tangentIdx] * tangents[tangentIdx];
                         S[mu2] = new double[] { sp.X, sp.Y };
                         mu2++;
                     }
@@ -1154,6 +1154,308 @@ namespace Nurbsy.Helpers
             }
 
             curve = new NurbsCurve<Vector2>(degree, controlPoints, knotVector);
+            return true;
+        }
+
+        private static double ComputeRemoveKnotErrorBound(
+            NurbsCurve<Vector2> curve,
+            int removalIndex
+        )
+        {
+            int degree = curve.Degree;
+            var knotVector = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Range(removalIndex, 0, knotVector.Count - 1, nameof(removalIndex));
+
+            int ord = degree + 1;
+            int r = removalIndex;
+            double u = knotVector[r];
+            int s = Polynomials.GetKnotMultiplicity(knotVector, u);
+            int last = r - s;
+            int first = r - degree;
+            int off = first - 1;
+
+            var temp = new Vector3[knotVector.Count];
+
+            var cpOff = controlPoints[off];
+            // Homogeneous: x*w, y*w, w
+            temp[0] = new Vector3(cpOff.Value * (float)cpOff.Weight, (float)cpOff.Weight);
+
+            var cpLast = controlPoints[last + 1];
+            temp[last + 1 - off] = new Vector3(
+                cpLast.Value * (float)cpLast.Weight,
+                (float)cpLast.Weight
+            );
+
+            int i = first;
+            int j = last;
+            int ii = 1;
+            int jj = last - off;
+
+            while (j - i > 0)
+            {
+                double alfi = (u - knotVector[i]) / (knotVector[i + ord] - knotVector[i]);
+                double alfj = (u - knotVector[j]) / (knotVector[j + ord] - knotVector[j]);
+
+                var pI = controlPoints[i];
+                var vI = new Vector3(pI.Value * (float)pI.Weight, (float)pI.Weight);
+                temp[ii] = (vI - (float)(1.0 - alfi) * temp[ii - 1]) / (float)alfi;
+
+                var pJ = controlPoints[j];
+                var vJ = new Vector3(pJ.Value * (float)pJ.Weight, (float)pJ.Weight);
+                temp[jj] = (vJ - (float)alfj * temp[jj + 1]) / (float)(1.0 - alfj);
+
+                i++;
+                ii++;
+                j--;
+                jj--;
+            }
+
+            if (j - i < 0)
+            {
+                return (temp[ii - 1] - temp[jj + 1]).Length();
+            }
+            else
+            {
+                double alfi = (u - knotVector[i]) / (knotVector[i + ord] - knotVector[i]);
+                var cpI = controlPoints[i];
+                var vI = new Vector3(cpI.Value * (float)cpI.Weight, (float)cpI.Weight);
+                return (
+                    vI - ((float)alfi * temp[ii + 1] + (float)(1.0 - alfi) * temp[ii - 1])
+                ).Length();
+            }
+        }
+
+        public static bool RemoveKnotsByGivenBound(
+            NurbsCurve<Vector2> curve,
+            IReadOnlyList<double> parameters,
+            List<double> errors,
+            double maxError,
+            out NurbsCurve<Vector2> result
+        )
+        {
+            int degree = curve.Degree;
+            // Create mutable copies
+            var tempU = new List<double>(curve.Knots);
+            var tempCP = new List<ControlPoint<Vector2>>(curve.ControlPoints);
+            var currentCurve = new NurbsCurve<Vector2>(degree, tempCP, tempU);
+
+            Validate.Argument(
+                parameters.Count > 0,
+                nameof(parameters),
+                "Params size must be greater than zero."
+            );
+            Validate.Argument(
+                parameters.Count == errors.Count,
+                nameof(errors),
+                "Errors size must be equal to params size."
+            );
+            Validate.Argument(
+                MathUtils.IsGreaterThan(maxError, 0.0),
+                nameof(maxError),
+                "Maxerror must be greater than zero."
+            );
+
+            int knotSize = tempU.Count;
+            var Br = new List<double>(new double[knotSize]);
+            var S = new List<int>(new int[knotSize]);
+            var Nl = new List<int>(new int[knotSize]);
+            var Nr = new List<int>(new int[knotSize]);
+
+            for (int k = 0; k < knotSize; k++)
+            {
+                Br[k] = Constants.MaxDistance;
+                Nr[k] = parameters.Count - 1;
+            }
+
+            var uk = parameters;
+            int ukSize = uk.Count;
+            var NewError = new double[ukSize];
+            var temp = new double[ukSize];
+
+            int s = 1;
+            int controlPointsSize = tempCP.Count;
+            int n = controlPointsSize - 1;
+
+            for (int i = degree + 1; i < controlPointsSize; i++)
+            {
+                if (MathUtils.IsLessThan(tempU[i], tempU[i + 1]))
+                {
+                    Br[i] = ComputeRemoveKnotErrorBound(currentCurve, i);
+                    S[i] = Polynomials.GetKnotMultiplicity(tempU, tempU[i]);
+                    s = 1;
+                }
+                else
+                {
+                    Br[i] = Constants.MaxDistance;
+                    S[i] = 1;
+                    s++;
+                }
+            }
+
+            Nl[0] = 0;
+            for (int i = 0; i < ukSize; i++)
+            {
+                int spanIndex = Polynomials.GetKnotSpanIndex(degree, tempU, uk[i]);
+                if (Nl[spanIndex] == 0 && spanIndex != 0) // Nl[0] is 0, so check index
+                {
+                    Nl[spanIndex] = i;
+                }
+                if (i + 1 < ukSize)
+                {
+                    Nr[spanIndex] = i + 1;
+                }
+            }
+
+            while (true)
+            {
+                double minStandard = Constants.MaxDistance;
+                int BrMinIndex = 0;
+
+                for (int i = 0; i < Br.Count; i++)
+                {
+                    if (MathUtils.IsLessThan(Br[i], minStandard))
+                    {
+                        BrMinIndex = i;
+                        minStandard = Br[i];
+                    }
+                }
+
+                double BrMin = Br[BrMinIndex];
+
+                if (MathUtils.IsAlmostEqualTo(BrMin, Constants.MaxDistance))
+                {
+                    break;
+                }
+
+                int r = BrMinIndex;
+                s = S[BrMinIndex];
+
+                int Rstart = Math.Max(r - degree, degree + 1);
+                int Rend = Math.Min(r + degree - S[r + degree] + 1, n);
+                Rstart = Nl[Rstart];
+                Rend = Nr[Rend];
+
+                bool removable = true;
+                for (int i = Rstart; i <= Rend; i++)
+                {
+                    double a;
+                    if ((degree + s) % 2 != 0)
+                    {
+                        double u = uk[i];
+                        int k = (degree + s + 1) / 2;
+                        a = tempU[r] - tempU[r - k + 1];
+                        a /= tempU[r - k + degree + 2] - tempU[r - k + 1];
+                        NewError[i] =
+                            (1.0 - a)
+                            * Br[r]
+                            * Polynomials.OneBasisFunction(r - k + 1, degree, tempU, u);
+                    }
+                    else
+                    {
+                        double u = uk[i];
+                        int k = (degree + s) / 2;
+                        NewError[i] = Br[r] * Polynomials.OneBasisFunction(r - k, degree, tempU, u);
+                    }
+                    temp[i] = NewError[i] + errors[i];
+                    if (MathUtils.IsGreaterThan(temp[i], maxError))
+                    {
+                        removable = false;
+                        Br[r] = Constants.MaxDistance;
+                        break;
+                    }
+                }
+
+                if (removable)
+                {
+                    if (RemoveKnot(currentCurve, tempU[r], 1, out var newtc))
+                    {
+                        currentCurve = newtc;
+                        tempU = new List<double>(newtc.Knots);
+                        tempCP = new List<ControlPoint<Vector2>>(newtc.ControlPoints);
+
+                        controlPointsSize = tempCP.Count;
+                        n = controlPointsSize - 1;
+
+                        for (int i = Rstart; i <= Rend; i++)
+                        {
+                            errors[i] = temp[i];
+                        }
+
+                        if (controlPointsSize <= degree + 1)
+                        {
+                            break;
+                        }
+
+                        Rstart = Nl[r - degree - 1];
+                        Rend = Nr[r - S[r]];
+
+                        int spanIndex = 0;
+                        int oldspanIndex = -1;
+                        for (int k = Rstart; k <= Rend; k++)
+                        {
+                            spanIndex = Polynomials.GetKnotSpanIndex(degree, tempU, uk[k]);
+                            if (spanIndex != oldspanIndex)
+                            {
+                                Nl[spanIndex] = k;
+                            }
+                            if (k + 1 < ukSize)
+                            {
+                                Nr[spanIndex] = k + 1;
+                            }
+                            oldspanIndex = spanIndex;
+                        }
+
+                        // Shift Nl, Nr
+                        for (int k = r - S[r] + 1; k < Nl.Count - 1; k++)
+                        {
+                            Nl[k] = Nl[k + 1];
+                            Nr[k] = Nr[k + 1];
+                        }
+                        Nl.RemoveAt(Nl.Count - 1);
+                        Nr.RemoveAt(Nr.Count - 1);
+
+                        Rstart = Math.Max(r - degree, degree + 1);
+                        Rend = Math.Min(r + degree - S[r] + 1, controlPointsSize);
+                        s = S[Rstart];
+
+                        for (int i = Rstart; i <= Rend; i++)
+                        {
+                            if (MathUtils.IsLessThan(tempU[i], tempU[i + 1]))
+                            {
+                                Br[i] = ComputeRemoveKnotErrorBound(currentCurve, i);
+                                S[i] = s;
+                                s = 1;
+                            }
+                            else
+                            {
+                                Br[i] = Constants.MaxDistance;
+                                S[i] = 1;
+                                s++;
+                            }
+                        }
+
+                        for (int i = Rend + 1; i < Br.Count - 1; i++)
+                        {
+                            Br[i] = Br[i + 1];
+                            S[i] = S[i + 1];
+                        }
+                        Br.RemoveAt(Br.Count - 1);
+                        S.RemoveAt(S.Count - 1); // Maintain sizeSync
+                    }
+                    else
+                    {
+                        Br[r] = Constants.MaxDistance;
+                    }
+                }
+                else
+                {
+                    Br[r] = Constants.MaxDistance;
+                }
+            }
+
+            result = currentCurve;
             return true;
         }
 

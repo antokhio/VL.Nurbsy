@@ -43,11 +43,11 @@ Port these methods into a `BezierCurveHelper` or directly into the `BezierCurve<
 1.  **`Check`**: Validate Knot vector and Control Point counts ($m = n + p + 1$). [x]
 2.  **`GetPointOnCurve`**: [x]
     - *Dependency:* `BsplineCurve` (Basis function evaluation).
-3.  **`ComputeRationalCurveDerivatives`**:
+3.  **`ComputeRationalCurveDerivatives`**: [x]
     - *Dependency:* `BsplineCurve` derivatives.
-4.  **`IsLinear`**: Geometric check for linearity.
-5.  **`CreateLine`**: Factory method.
-6.  **`CreateTransformed`**: Applies a 4x4 matrix to control points.
+4.  **`IsLinear`**: Geometric check for linearity. [x]
+5.  **`CreateLine`**: Factory method. [ ]
+6.  **`CreateTransformed`**: Applies a 4x4 matrix to control points. [ ]
 7.  **`Reverse`**: Reverses control points and knots.
 8.  **`Reparametrize`**: Scales the knot vector to a new domain $[a, b]$.
 

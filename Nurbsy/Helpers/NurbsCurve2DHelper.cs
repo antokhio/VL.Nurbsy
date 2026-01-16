@@ -796,7 +796,7 @@ namespace Nurbsy.Helpers
                         temp = a + (temp - b);
                 }
 
-                double condition4 = ((temp - paramT) * derivatives[1]).Length();
+                double condition4 = ((float)(temp - paramT) * derivatives[1]).Length();
                 if (condition4 < Constants.DistanceEpsilon)
                 {
                     return paramT;
@@ -924,6 +924,116 @@ namespace Nurbsy.Helpers
                 }
             }
             return false;
+        }
+
+        public static int InsertKnot(
+            NurbsCurve<Vector2> curve,
+            double insertKnot,
+            int times,
+            out NurbsCurve<Vector2> result
+        )
+        {
+            int degree = curve.Degree;
+            var knotVector = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Argument(times > 0, nameof(times), "Times must be greater than zero.");
+            Validate.Range(
+                insertKnot,
+                knotVector[0],
+                knotVector[knotVector.Count - 1],
+                nameof(insertKnot)
+            );
+
+            int knotSpanIndex = Polynomials.GetKnotSpanIndex(degree, knotVector, insertKnot);
+            int originMultiplicity = Polynomials.GetKnotMultiplicity(knotVector, insertKnot);
+
+            if (originMultiplicity + times > degree + 1)
+            {
+                times = degree + 1 - originMultiplicity;
+            }
+
+            if (times <= 0)
+            {
+                result = curve;
+                return 0;
+            }
+
+            var insertedKnotVector = new List<double>(knotVector.Count + times);
+            for (int i = 0; i <= knotSpanIndex; i++)
+            {
+                insertedKnotVector.Add(knotVector[i]);
+            }
+            for (int i = 1; i <= times; i++)
+            {
+                insertedKnotVector.Add(insertKnot);
+            }
+            for (int i = knotSpanIndex + 1; i < knotVector.Count; i++)
+            {
+                insertedKnotVector.Add(knotVector[i]);
+            }
+
+            var updatedControlPoints = new ControlPoint<Vector2>[controlPoints.Count + times];
+            for (int i = 0; i <= knotSpanIndex - degree; i++)
+            {
+                updatedControlPoints[i] = controlPoints[i];
+            }
+            for (int i = knotSpanIndex - originMultiplicity; i < controlPoints.Count; i++)
+            {
+                updatedControlPoints[i + times] = controlPoints[i];
+            }
+
+            var temp = new Vector3[degree - originMultiplicity + 1];
+            for (int i = 0; i <= degree - originMultiplicity; i++)
+            {
+                var cp = controlPoints[knotSpanIndex - degree + i];
+                temp[i] = new Vector3(cp.Value * (float)cp.Weight, (float)cp.Weight);
+            }
+
+            int L = 0;
+            for (int j = 1; j <= times; j++)
+            {
+                L = knotSpanIndex - degree + j;
+                for (int i = 0; i <= degree - j - originMultiplicity; i++)
+                {
+                    double alpha =
+                        (insertKnot - knotVector[L + i])
+                        / (knotVector[i + knotSpanIndex + 1] - knotVector[L + i]);
+                    temp[i] = (float)alpha * temp[i + 1] + (float)(1.0 - alpha) * temp[i];
+                }
+
+                var tVal = temp[0];
+                updatedControlPoints[L] = MathUtils.IsZero(tVal.Z)
+                    ? new ControlPoint<Vector2>(Vector2.Zero, 0)
+                    : new ControlPoint<Vector2>(new Vector2(tVal.X, tVal.Y) / tVal.Z, tVal.Z);
+
+                if (degree - j - originMultiplicity > 0)
+                {
+                    var tBack = temp[degree - j - originMultiplicity];
+                    int idx = knotSpanIndex + times - j - originMultiplicity;
+                    updatedControlPoints[idx] = MathUtils.IsZero(tBack.Z)
+                        ? new ControlPoint<Vector2>(Vector2.Zero, 0)
+                        : new ControlPoint<Vector2>(
+                            new Vector2(tBack.X, tBack.Y) / tBack.Z,
+                            tBack.Z
+                        );
+                }
+            }
+
+            for (int i = L + 1; i < knotSpanIndex - originMultiplicity; i++)
+            {
+                var tVal = temp[i - L];
+                updatedControlPoints[i] = MathUtils.IsZero(tVal.Z)
+                    ? new ControlPoint<Vector2>(Vector2.Zero, 0)
+                    : new ControlPoint<Vector2>(new Vector2(tVal.X, tVal.Y) / tVal.Z, tVal.Z);
+            }
+
+            result = new NurbsCurve<Vector2>(
+                degree,
+                updatedControlPoints,
+                insertedKnotVector.ToArray()
+            );
+            return times;
         }
 
         public static bool RemoveKnot(
@@ -1114,7 +1224,6 @@ namespace Nurbsy.Helpers
             for (int k = ii2 + 1; k <= n; k++)
             {
                 updatedControlPoints[currJ] = controlPoints[k]; // Use ORIGINAL points for the tail?
-                // C++: updatedControlPoints[j] = controlPoints[k]; where controlPoints is the original reference
                 currJ++;
             }
 

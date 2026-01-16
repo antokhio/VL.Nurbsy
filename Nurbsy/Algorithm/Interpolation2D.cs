@@ -6,8 +6,8 @@ namespace Nurbsy.Algorithm
     {
         public static double GetTotalChordLength(IReadOnlyList<Vector2> throughPoints)
         {
-            int n = throughPoints.Count - 1;
             double length = 0.0;
+            int n = throughPoints.Count - 1;
             for (int i = 1; i <= n; i++)
             {
                 length += Vector2.Distance(throughPoints[i], throughPoints[i - 1]);
@@ -18,33 +18,21 @@ namespace Nurbsy.Algorithm
         public static double[] GetChordParameterization(IReadOnlyList<Vector2> throughPoints)
         {
             int size = throughPoints.Count;
-            int n = size - 1;
-
             var uk = new double[size];
-            uk[0] = 0.0;
-            uk[n] = 1.0;
+            uk[size - 1] = 1.0;
 
             double d = GetTotalChordLength(throughPoints);
-            if (MathUtils.IsZero(d))
+            for (int i = 1; i < size - 1; i++)
             {
-                for (int i = 1; i < n; i++)
-                    uk[i] = (double)i / n;
-            }
-            else
-            {
-                for (int i = 1; i < n; i++)
-                {
-                    uk[i] =
-                        uk[i - 1] + Vector2.Distance(throughPoints[i], throughPoints[i - 1]) / d;
-                }
+                uk[i] = uk[i - 1] + Vector2.Distance(throughPoints[i], throughPoints[i - 1]) / d;
             }
             return uk;
         }
 
         public static double GetCentripetalLength(IReadOnlyList<Vector2> throughPoints)
         {
-            int n = throughPoints.Count - 1;
             double length = 0.0;
+            int n = throughPoints.Count - 1;
             for (int i = 1; i <= n; i++)
             {
                 length += Math.Sqrt(Vector2.Distance(throughPoints[i], throughPoints[i - 1]));
@@ -55,112 +43,16 @@ namespace Nurbsy.Algorithm
         public static double[] GetCentripetalParameterization(IReadOnlyList<Vector2> throughPoints)
         {
             int size = throughPoints.Count;
-            int n = size - 1;
-
             var uk = new double[size];
-            uk[0] = 0.0;
-            uk[n] = 1.0;
+            uk[size - 1] = 1.0;
 
             double d = GetCentripetalLength(throughPoints);
-            if (MathUtils.IsZero(d))
-            {
-                for (int i = 1; i < n; i++)
-                    uk[i] = (double)i / n;
-            }
-            else
-            {
-                for (int i = 1; i < n; i++)
-                {
-                    uk[i] =
-                        uk[i - 1]
-                        + Math.Sqrt(Vector2.Distance(throughPoints[i], throughPoints[i - 1])) / d;
-                }
-            }
-            return uk;
-        }
-
-        public static bool TryComputeTangents(
-            IReadOnlyList<Vector2> throughPoints,
-            out Vector2[] tangents
-        )
-        {
-            int size = throughPoints.Count;
-            if (size < 5)
-            {
-                tangents = null;
-                return false;
-            }
-
-            tangents = new Vector2[size];
-
-            for (int k = 2; k < size - 2; k++)
-            {
-                var qk_1 = Getqk(throughPoints, k - 1);
-                var qk = Getqk(throughPoints, k);
-                var qk1 = Getqk(throughPoints, k + 1);
-                var qk2 = Getqk(throughPoints, k + 2);
-
-                tangents[k] = GetTk(qk_1, qk, qk1, qk2);
-            }
-
-            int n = size - 1;
-            var q0 = 2.0f * Getqk(throughPoints, 1) - Getqk(throughPoints, 2);
-            var q_1 = 2.0f * q0 - Getqk(throughPoints, 1);
-            var qn1 = 2.0f * Getqk(throughPoints, n) - Getqk(throughPoints, n - 1);
-            var qn2 = 2.0f * qn1 - Getqk(throughPoints, n);
-
-            tangents[0] = GetTk(q_1, q0, Getqk(throughPoints, 1), Getqk(throughPoints, 2));
-            tangents[1] = GetTk(
-                q0,
-                Getqk(throughPoints, 1),
-                Getqk(throughPoints, 2),
-                Getqk(throughPoints, 3)
-            );
-            tangents[n - 1] = GetTk(
-                Getqk(throughPoints, n - 2),
-                Getqk(throughPoints, n - 1),
-                Getqk(throughPoints, n),
-                qn1
-            );
-            tangents[n] = GetTk(Getqk(throughPoints, n - 1), Getqk(throughPoints, n), qn1, qn2);
-
-            return true;
-        }
-
-        public static Vector2[] ComputeTangents(IReadOnlyList<Vector2> throughPoints)
-        {
-            int size = throughPoints.Count;
-            var tangents = new Vector2[size];
-            var delta = new double[size];
-            var qq = new Vector2[size];
-
-            var paramsT = GetChordParameterization(throughPoints);
-
-            for (int i = 1; i < size; i++)
-            {
-                delta[i] = paramsT[i] - paramsT[i - 1];
-                qq[i] = throughPoints[i] - throughPoints[i - 1];
-            }
-
             for (int i = 1; i < size - 1; i++)
             {
-                double a = delta[i] / (delta[i] + delta[i + 1]);
-                tangents[i] = Vector2.Normalize((float)(1.0 - a) * qq[i] + (float)a * qq[i + 1]);
+                double dist = Vector2.Distance(throughPoints[i], throughPoints[i - 1]);
+                uk[i] = uk[i - 1] + Math.Sqrt(dist) / d;
             }
-
-            if (delta[1] > MathUtils.Epsilon)
-                tangents[0] = Vector2.Normalize(2.0f * qq[1] / (float)delta[1] - tangents[1]);
-            else
-                tangents[0] = Vector2.Zero;
-
-            if (delta[size - 1] > MathUtils.Epsilon)
-                tangents[size - 1] = Vector2.Normalize(
-                    2.0f * qq[size - 1] / (float)delta[size - 1] - tangents[size - 2]
-                );
-            else
-                tangents[size - 1] = Vector2.Zero;
-
-            return tangents;
+            return uk;
         }
 
         public static bool ComputerWeightForRationalQuadraticInterpolation(
@@ -175,63 +67,91 @@ namespace Nurbsy.Algorithm
             Vector2 EM = middleControlPoint - endPoint;
             Vector2 SE = endPoint - startPoint;
 
-            Vector2 SMNorm = Vector2.Normalize(SM);
-            Vector2 EMNorm = Vector2.Normalize(EM);
-
             if (
-                MathUtils.IsAlmostEqualTo(SMNorm, EMNorm)
-                || MathUtils.IsAlmostEqualTo(SMNorm, -EMNorm)
+                SM.LengthSquared() > MathUtil.ZeroTolerance
+                && EM.LengthSquared() > MathUtil.ZeroTolerance
             )
             {
-                weight = 1.0;
-                return true;
+                Vector2 smNorm = Vector2.Normalize(SM);
+                Vector2 emNorm = Vector2.Normalize(EM);
+
+                if (
+                    MathUtils.IsAlmostEqualTo(smNorm, emNorm)
+                    || MathUtils.IsAlmostEqualTo(smNorm, -emNorm)
+                )
+                {
+                    weight = 1.0;
+                    return true;
+                }
             }
 
             if (MathUtils.IsAlmostEqualTo(SM.Length(), EM.Length()))
             {
-                weight = Vector2.Dot(SM, SE) / (SM.Length() * SE.Length());
+                double d = SM.Length() * SE.Length();
+                if (MathUtils.IsZero(d))
+                    return false;
+                weight = Vector2.Dot(SM, SE) / d;
                 return true;
             }
 
             Vector2 M = 0.5f * (startPoint + endPoint);
             Vector2 MR = middleControlPoint - M;
-            double ratio = SM.Length() / SE.Length();
+            double seLen = SE.Length();
+            if (MathUtils.IsZero(seLen))
+                return false;
+
+            double ratio = SM.Length() / seLen;
             double frac = 1.0 / (ratio + 1.0);
             Vector2 D = endPoint + (float)frac * EM;
             Vector2 SD = D - startPoint;
 
-            var type1 = Intersection2D.ComputeRays(
+            // Intersect Line(startPoint, SD) and Line(M, MR)
+            // Need directions
+            Vector2 dirSD =
+                SD.LengthSquared() > MathUtil.ZeroTolerance ? Vector2.Normalize(SD) : Vector2.Zero;
+            Vector2 dirMR =
+                MR.LengthSquared() > MathUtil.ZeroTolerance ? Vector2.Normalize(MR) : Vector2.Zero;
+
+            var type = Intersection2D.ComputeRays(
                 startPoint,
-                Vector2.Normalize(SD),
+                dirSD,
                 M,
-                Vector2.Normalize(MR),
+                dirMR,
                 out double alf1,
                 out double alf2,
                 out Vector2 S1
             );
-            if (type1 != CurveCurveIntersectionType.Intersecting)
+            if (type != CurveCurveIntersectionType.Intersecting)
                 return false;
 
-            ratio = EM.Length() / SE.Length();
+            double emLen = EM.Length();
+            ratio = emLen / seLen;
             frac = 1.0 / (ratio + 1.0);
-            D = startPoint + (float)frac * SM;
-            Vector2 ED = D - endPoint;
+            Vector2 D2 = startPoint + (float)frac * SM;
+            Vector2 ED = D2 - endPoint;
 
-            var type2 = Intersection2D.ComputeRays(
+            Vector2 dirED =
+                ED.LengthSquared() > MathUtil.ZeroTolerance ? Vector2.Normalize(ED) : Vector2.Zero;
+            type = Intersection2D.ComputeRays(
                 endPoint,
-                Vector2.Normalize(ED),
+                dirED,
                 M,
-                Vector2.Normalize(MR),
+                dirMR,
                 out alf1,
                 out alf2,
                 out Vector2 S2
             );
-            if (type2 != CurveCurveIntersectionType.Intersecting)
+            if (type != CurveCurveIntersectionType.Intersecting)
                 return false;
 
             Vector2 S = 0.5f * (S1 + S2);
             Vector2 MS = S - M;
-            double s = MS.Length() / MR.Length();
+            double msLen = MS.Length();
+            double mrLen = MR.Length();
+            if (MathUtils.IsZero(mrLen))
+                return false;
+
+            double s = msLen / mrLen;
             weight = s / (1.0 - s);
             return true;
         }
@@ -243,11 +163,17 @@ namespace Nurbsy.Algorithm
         )
         {
             int n = throughPoints.Count;
+            if (n == 0)
+            {
+                paramsU = Array.Empty<double>();
+                paramsV = Array.Empty<double>();
+                return false;
+            }
             int m = throughPoints[0].Count;
 
+            var cds = new double[Math.Max(n, m)];
             paramsU = new double[n];
             paramsV = new double[m];
-            var cds = new double[Math.Max(n, m)];
 
             int num = m;
             for (int l = 0; l < m; l++)
@@ -255,8 +181,9 @@ namespace Nurbsy.Algorithm
                 double total = 0.0;
                 for (int k = 1; k < n; k++)
                 {
-                    cds[k] = Vector2.Distance(throughPoints[k][l], throughPoints[k - 1][l]);
-                    total += cds[k];
+                    double dist = Vector2.Distance(throughPoints[k][l], throughPoints[k - 1][l]);
+                    cds[k] = dist;
+                    total += dist;
                 }
 
                 if (MathUtils.IsAlmostEqualTo(total, 0.0))
@@ -289,8 +216,9 @@ namespace Nurbsy.Algorithm
                 double total = 0.0;
                 for (int l = 1; l < m; l++)
                 {
-                    cds[l] = Vector2.Distance(throughPoints[k][l], throughPoints[k][l - 1]);
-                    total += cds[l];
+                    double dist = Vector2.Distance(throughPoints[k][l], throughPoints[k][l - 1]);
+                    cds[l] = dist;
+                    total += dist;
                 }
 
                 if (MathUtils.IsAlmostEqualTo(total, 0.0))
@@ -320,26 +248,135 @@ namespace Nurbsy.Algorithm
             return true;
         }
 
-        private static Vector2 Getqk(IReadOnlyList<Vector2> throughPoints, int index)
+        public static Vector2[] ComputeTangents(IReadOnlyList<Vector2> throughPoints)
         {
-            return throughPoints[index] - throughPoints[index - 1];
+            // Second version in C++ that returns vector list
+            int size = throughPoints.Count;
+            // Should probably check size >= 2 or return empty
+            var tangents = new Vector2[size];
+            var qq = new Vector2[size];
+            var delta = new double[size];
+
+            var paramsT = GetChordParameterization(throughPoints);
+
+            for (int i = 1; i < size; i++)
+            {
+                delta[i] = paramsT[i] - paramsT[i - 1];
+                qq[i] = throughPoints[i] - throughPoints[i - 1];
+            }
+
+            for (int i = 1; i < size - 1; i++)
+            {
+                double den = delta[i] + delta[i + 1];
+                if (MathUtils.IsZero(den))
+                {
+                    tangents[i] = Vector2.Normalize(qq[i + 1]);
+                    continue;
+                }
+                double a = delta[i] / den;
+                Vector2 vec = (float)(1.0 - a) * qq[i] + (float)a * qq[i + 1];
+                tangents[i] = Vector2.Normalize(vec);
+            }
+
+            if (size > 1)
+            {
+                if (!MathUtils.IsZero(delta[1]))
+                    tangents[0] = Vector2.Normalize(2.0f * qq[1] / (float)delta[1] - tangents[1]);
+                else
+                    tangents[0] = tangents[1];
+
+                if (!MathUtils.IsZero(delta[size - 1]))
+                {
+                    // size-1 index, size-2 previous
+                    tangents[size - 1] = Vector2.Normalize(
+                        2.0f * qq[size - 1] / (float)delta[size - 1] - tangents[size - 2]
+                    );
+                }
+                else
+                    tangents[size - 1] = tangents[size - 2];
+            }
+            else if (size == 1)
+            {
+                tangents[0] = Vector2.UnitX;
+            }
+
+            return tangents;
+        }
+
+        public static bool TryComputeTangents(
+            IReadOnlyList<Vector2> throughPoints,
+            out Vector2[] tangents
+        )
+        {
+            // First version in C++
+            int size = throughPoints.Count;
+            if (size < 5)
+            {
+                tangents = null;
+                return false;
+            }
+
+            tangents = new Vector2[size];
+            for (int k = 2; k < size - 2; k++)
+            {
+                Vector2 qk_1 = Getqk(throughPoints, k - 1);
+                Vector2 qk = Getqk(throughPoints, k);
+                Vector2 qk1 = Getqk(throughPoints, k + 1);
+                Vector2 qk2 = Getqk(throughPoints, k + 2);
+                tangents[k] = GetTk(qk_1, qk, qk1, qk2);
+            }
+
+            int n = size - 1;
+            Vector2 q0 = 2.0f * Getqk(throughPoints, 1) - Getqk(throughPoints, 2);
+            Vector2 q_1 = 2.0f * q0 - Getqk(throughPoints, 1);
+            Vector2 qn1 = 2.0f * Getqk(throughPoints, n) - Getqk(throughPoints, n - 1);
+            Vector2 qn2 = 2.0f * qn1 - Getqk(throughPoints, n);
+
+            tangents[0] = GetTk(q_1, q0, Getqk(throughPoints, 1), Getqk(throughPoints, 2));
+            tangents[1] = GetTk(
+                q0,
+                Getqk(throughPoints, 1),
+                Getqk(throughPoints, 2),
+                Getqk(throughPoints, 3)
+            );
+            tangents[size - 2] = GetTk(
+                Getqk(throughPoints, n - 2),
+                Getqk(throughPoints, n - 1),
+                Getqk(throughPoints, n),
+                qn1
+            );
+            tangents[size - 1] = GetTk(
+                Getqk(throughPoints, n - 1),
+                Getqk(throughPoints, n),
+                qn1,
+                qn2
+            );
+
+            return true;
+        }
+
+        private static Vector2 Getqk(IReadOnlyList<Vector2> pts, int index)
+        {
+            // index check? c++ assumes valid
+            return pts[index] - pts[index - 1];
         }
 
         private static double Getak(Vector2 qk_1, Vector2 qk, Vector2 qk1, Vector2 qk2)
         {
-            // For 2D cross product magnitude: Abs(x1*y2 - x2*y1)
-            double cross1 = Math.Abs(qk_1.X * qk.Y - qk_1.Y * qk.X);
-            double cross2 = Math.Abs(qk1.X * qk2.Y - qk1.Y * qk2.X);
-            double den = cross1 + cross2;
-            if (MathUtils.IsZero(den))
-                return 0.0;
-            return cross1 / den;
+            // 2D cross product magnitude: abs(x1y2 - x2y1)
+            double cp1 = Math.Abs(qk_1.X * qk.Y - qk_1.Y * qk.X);
+            double cp2 = Math.Abs(qk1.X * qk2.Y - qk1.Y * qk2.X);
+            double sum = cp1 + cp2;
+            if (MathUtils.IsZero(sum))
+                return 0.5;
+            return cp1 / sum;
         }
 
         private static Vector2 GetTk(Vector2 qk_1, Vector2 qk, Vector2 qk1, Vector2 qk2)
         {
             double ak = Getak(qk_1, qk, qk1, qk2);
-            return Vector2.Normalize((float)(1.0 - ak) * qk + (float)ak * qk1);
+            Vector2 v = (float)(1.0 - ak) * qk + (float)ak * qk1;
+            return Vector2.Normalize(v);
         }
     }
 }

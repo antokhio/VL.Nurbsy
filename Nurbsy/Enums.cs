@@ -43,5 +43,11 @@
         Simpson = 0,
         GaussLegendre = 1,
         Chebyshev = 2,
-    };
+    }
+
+    public enum OffsetType
+    {
+        TillerAndHanson = 0,
+        PieglAndTiller = 1,
+    }
 }

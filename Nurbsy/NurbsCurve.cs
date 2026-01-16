@@ -428,6 +428,37 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public int InsertKnot(double insertKnot, int times, out NurbsCurve<T> result)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                int inserted = NurbsCurve2DHelper.InsertKnot(
+                    curve2,
+                    insertKnot,
+                    times,
+                    out var res2
+                );
+                result = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
+                return inserted;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                int inserted = NurbsCurve3DHelper.InsertKnot(
+                    curve3,
+                    insertKnot,
+                    times,
+                    out var res3
+                );
+                result = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
+                return inserted;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool RemoveKnot(double removeKnot, int times, out NurbsCurve<T> result)
         {
             if (typeof(T) == typeof(Vector2))

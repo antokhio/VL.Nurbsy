@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using Nurbsy.Algorithm;
 using Nurbsy.Helpers;
 using Stride.Core.Mathematics;
 
@@ -16,7 +17,7 @@ namespace Nurbsy
         {
             Degree = degree;
             ControlPoints = controlPoints;
-            Knots = NurbsCurveHelper.GenerateClampedKnots(Degree, ControlPoints.Count);
+            Knots = KnotsUtils.GenerateClampedKnots(Degree, ControlPoints.Count);
 
             Check();
         }

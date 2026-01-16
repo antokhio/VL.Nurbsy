@@ -1,28 +1,228 @@
-﻿namespace Nurbsy.Helpers
+﻿using System.Runtime.CompilerServices;
+using Stride.Core.Mathematics;
+
+namespace Nurbsy.Helpers
 {
     public static class NurbsCurveHelper
     {
-        public static IReadOnlyList<double> GenerateClampedKnots(int degree, int controlPointCount)
+        public static NurbsCurve<T> CreateLine<T>(T start, T end)
+            where T : struct
         {
-            int knotCount = controlPointCount + degree + 1;
-            List<double> knots = new List<double>(knotCount);
-            // Add clamped start knots
-            for (int i = 0; i <= degree; i++)
+            if (typeof(T) == typeof(Vector2))
             {
-                knots.Add(0.0);
+                var s = Unsafe.As<T, Vector2>(ref start);
+                var e = Unsafe.As<T, Vector2>(ref end);
+                var result = NurbsCurve2DHelper.CreateLine(s, e);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
             }
-            // Add internal knots
-            int internalKnotCount = knotCount - 2 * (degree + 1);
-            for (int i = 1; i <= internalKnotCount; i++)
+
+            if (typeof(T) == typeof(Vector3))
             {
-                knots.Add((double)i / (internalKnotCount + 1));
+                var s = Unsafe.As<T, Vector3>(ref start);
+                var e = Unsafe.As<T, Vector3>(ref end);
+                var result = NurbsCurve3DHelper.CreateLine(s, e);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
             }
-            // Add clamped end knots
-            for (int i = 0; i <= degree; i++)
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public static NurbsCurve<T> CreateCubicHermite<T>(
+            IReadOnlyList<T> throughPoints,
+            IReadOnlyList<T> tangents
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
             {
-                knots.Add(1.0);
+                var inputPoints = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(
+                    ref throughPoints
+                );
+                var inputTangents = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(
+                    ref tangents
+                );
+                var result = NurbsCurve2DHelper.CreateCubicHermite(inputPoints, inputTangents);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
             }
-            return knots;
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var inputPoints = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(
+                    ref throughPoints
+                );
+                var inputTangents = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(
+                    ref tangents
+                );
+                var result = NurbsCurve3DHelper.CreateCubicHermite(inputPoints, inputTangents);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public static NurbsCurve<T> CreateArc<T>(
+            T center,
+            T xAxis,
+            T yAxis,
+            double startRad,
+            double endRad,
+            double xRadius,
+            double yRadius
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var c = Unsafe.As<T, Vector2>(ref center);
+                var x = Unsafe.As<T, Vector2>(ref xAxis);
+                var y = Unsafe.As<T, Vector2>(ref yAxis);
+                var result = NurbsCurve2DHelper.CreateArc(
+                    c,
+                    x,
+                    y,
+                    startRad,
+                    endRad,
+                    xRadius,
+                    yRadius
+                );
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var c = Unsafe.As<T, Vector3>(ref center);
+                var x = Unsafe.As<T, Vector3>(ref xAxis);
+                var y = Unsafe.As<T, Vector3>(ref yAxis);
+                var result = NurbsCurve3DHelper.CreateArc(
+                    c,
+                    x,
+                    y,
+                    startRad,
+                    endRad,
+                    xRadius,
+                    yRadius
+                );
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public static bool CreateOneConicArc<T>(
+            T start,
+            T startTangent,
+            T end,
+            T endTangent,
+            T pointOnConic,
+            out T projectPoint,
+            out double projectPointWeight
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var s = Unsafe.As<T, Vector2>(ref start);
+                var st = Unsafe.As<T, Vector2>(ref startTangent);
+                var e = Unsafe.As<T, Vector2>(ref end);
+                var et = Unsafe.As<T, Vector2>(ref endTangent);
+                var pc = Unsafe.As<T, Vector2>(ref pointOnConic);
+
+                bool result = NurbsCurve2DHelper.CreateOneConicArc(
+                    s,
+                    st,
+                    e,
+                    et,
+                    pc,
+                    out var pp,
+                    out projectPointWeight
+                );
+                projectPoint = Unsafe.As<Vector2, T>(ref pp);
+                return result;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var s = Unsafe.As<T, Vector3>(ref start);
+                var st = Unsafe.As<T, Vector3>(ref startTangent);
+                var e = Unsafe.As<T, Vector3>(ref end);
+                var et = Unsafe.As<T, Vector3>(ref endTangent);
+                var pc = Unsafe.As<T, Vector3>(ref pointOnConic);
+
+                bool result = NurbsCurve3DHelper.CreateOneConicArc(
+                    s,
+                    st,
+                    e,
+                    et,
+                    pc,
+                    out var pp,
+                    out projectPointWeight
+                );
+                projectPoint = Unsafe.As<Vector3, T>(ref pp);
+                return result;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
+        public static void SplitArc<T>(
+            T start,
+            T projectPoint,
+            double projectPointWeight,
+            T end,
+            out T insertPointAtStartSide,
+            out T splitPoint,
+            out T insertPointAtEndSide,
+            out double insertWeight
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var s = Unsafe.As<T, Vector2>(ref start);
+                var pp = Unsafe.As<T, Vector2>(ref projectPoint);
+                var e = Unsafe.As<T, Vector2>(ref end);
+
+                NurbsCurve2DHelper.SplitArc(
+                    s,
+                    pp,
+                    projectPointWeight,
+                    e,
+                    out var startSide,
+                    out var sp,
+                    out var endSide,
+                    out insertWeight
+                );
+
+                insertPointAtStartSide = Unsafe.As<Vector2, T>(ref startSide);
+                splitPoint = Unsafe.As<Vector2, T>(ref sp);
+                insertPointAtEndSide = Unsafe.As<Vector2, T>(ref endSide);
+                return;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var s = Unsafe.As<T, Vector3>(ref start);
+                var pp = Unsafe.As<T, Vector3>(ref projectPoint);
+                var e = Unsafe.As<T, Vector3>(ref end);
+
+                NurbsCurve3DHelper.SplitArc(
+                    s,
+                    pp,
+                    projectPointWeight,
+                    e,
+                    out var startSide,
+                    out var sp,
+                    out var endSide,
+                    out insertWeight
+                );
+
+                insertPointAtStartSide = Unsafe.As<Vector3, T>(ref startSide);
+                splitPoint = Unsafe.As<Vector3, T>(ref sp);
+                insertPointAtEndSide = Unsafe.As<Vector3, T>(ref endSide);
+                return;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
     }
 }

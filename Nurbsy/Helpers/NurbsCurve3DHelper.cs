@@ -5,6 +5,340 @@ namespace Nurbsy.Helpers
 {
     internal static class NurbsCurve3DHelper
     {
+        public static NurbsCurve<Vector3> CreateLine(Vector3 start, Vector3 end)
+        {
+            Validate.Argument(
+                !MathUtils.IsAlmostEqualTo(start, end),
+                nameof(end),
+                "start must not be equal to end."
+            );
+
+            int degree = 1;
+            var controlPoints = new ControlPoint<Vector3>[]
+            {
+                new ControlPoint<Vector3>(start, 1.0),
+                new ControlPoint<Vector3>(end, 1.0),
+            };
+            var knots = new double[] { 0.0, 0.0, 1.0, 1.0 };
+
+            return new NurbsCurve<Vector3>(degree, controlPoints, knots);
+        }
+
+        public static NurbsCurve<Vector3> CreateCubicHermite(
+            IReadOnlyList<Vector3> throughPoints,
+            IReadOnlyList<Vector3> tangents
+        )
+        {
+            int n = throughPoints.Count;
+            Validate.Argument(
+                n > 3,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than three."
+            );
+            Validate.Argument(
+                n == tangents.Count,
+                nameof(tangents),
+                "Tangents size must be equal to throughPoints size."
+            );
+
+            var startPoint = throughPoints[0];
+            var endPoint = throughPoints[n - 1];
+
+            var uk = Interpolation.GetChordParameterization(throughPoints);
+
+            bool isCyclePoint = MathUtils.IsAlmostEqualTo(startPoint, endPoint);
+            var startTangent = tangents[0];
+            var endTangent = tangents[n - 1];
+            bool isCycleTangent = MathUtils.IsAlmostEqualTo(startTangent, endTangent);
+
+            int kn = 2 * n;
+            int knotSize = kn + 4;
+            var knotVector = new double[knotSize];
+
+            for (int i = 2, j = 0; i < kn + 2; i += 2, j++)
+            {
+                knotVector[i] = uk[j];
+                knotVector[i + 1] = uk[j];
+            }
+
+            if (isCyclePoint && isCycleTangent)
+            {
+                knotVector[0] = knotVector[1] = uk[0] - (uk[n - 1] - uk[n - 2]);
+                knotVector[kn + 2] = knotVector[kn + 3] = uk[n - 1] + uk[1] - uk[0];
+            }
+            else if (isCyclePoint && !isCycleTangent)
+            {
+                knotVector[0] = uk[0] - (uk[n - 1] - uk[n - 2]);
+                knotVector[1] = knotVector[2];
+                knotVector[kn + 2] = knotVector[kn];
+                knotVector[kn + 3] = uk[n - 1] + uk[1] - uk[0];
+            }
+            else
+            {
+                knotVector[0] = knotVector[1] = knotVector[2];
+                knotVector[kn + 2] = knotVector[kn + 3] = knotVector[kn];
+            }
+
+            var controlPoints = new ControlPoint<Vector3>[kn];
+            for (int j = 0, coef = 0; j < kn; j += 2, coef++)
+            {
+                double i1 = knotVector[j + 3] - knotVector[j + 1];
+                double i2 = knotVector[j + 4] - knotVector[j + 2];
+
+                controlPoints[j] = new ControlPoint<Vector3>(
+                    throughPoints[coef] - (float)(i1 / 3.0) * tangents[coef],
+                    1.0
+                );
+                controlPoints[j + 1] = new ControlPoint<Vector3>(
+                    throughPoints[coef] + (float)(i2 / 3.0) * tangents[coef],
+                    1.0
+                );
+            }
+
+            return new NurbsCurve<Vector3>(degree: 3, controlPoints, knotVector);
+        }
+
+        public static NurbsCurve<Vector3> CreateArc(
+            Vector3 center,
+            Vector3 xAxis,
+            Vector3 yAxis,
+            double startRad,
+            double endRad,
+            double xRadius,
+            double yRadius
+        )
+        {
+            Validate.Argument(
+                !MathUtils.IsZero(xAxis, Constants.DoubleEpsilon),
+                nameof(xAxis),
+                "xAxis must not be zero vector."
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(yAxis, Constants.DoubleEpsilon),
+                nameof(yAxis),
+                "yAxis must not be zero vector."
+            );
+            Validate.Argument(
+                MathUtils.IsGreaterThan(endRad, startRad),
+                nameof(endRad),
+                "endRad must be greater than startRad."
+            );
+
+            double theta = endRad - startRad;
+            Validate.Range(theta, 0, 2 * Constants.Pi, nameof(theta));
+            Validate.Argument(
+                MathUtils.IsGreaterThan(xRadius, 0.0),
+                nameof(xRadius),
+                "xRadius must be greater than zero."
+            );
+            Validate.Argument(
+                MathUtils.IsGreaterThan(yRadius, 0.0),
+                nameof(yRadius),
+                "yRadius must be greater than zero."
+            );
+
+            int narcs = 0;
+            if (MathUtils.IsLessThanOrEqual(theta, Constants.Pi / 2.0))
+            {
+                narcs = 1;
+            }
+            else
+            {
+                if (MathUtils.IsLessThanOrEqual(theta, Constants.Pi))
+                {
+                    narcs = 2;
+                }
+                else if (MathUtils.IsLessThanOrEqual(theta, 3 * Constants.Pi / 2.0))
+                {
+                    narcs = 3;
+                }
+                else
+                {
+                    narcs = 4;
+                }
+            }
+
+            double dtheta = theta / narcs;
+            int n = 2 * narcs;
+            int degree = 2;
+
+            var controlPoints = new ControlPoint<Vector3>[n + 1];
+            var knotVector = new double[n + degree + 2];
+
+            double w1 = Math.Cos(dtheta / 2.0);
+            Vector3 nX = Vector3.Normalize(xAxis);
+            Vector3 nY = Vector3.Normalize(yAxis);
+
+            Vector3 P0 =
+                center
+                + (float)(xRadius * Math.Cos(startRad)) * nX
+                + (float)(yRadius * Math.Sin(startRad)) * nY;
+            Vector3 T0 = (float)-Math.Sin(startRad) * nX + (float)Math.Cos(startRad) * nY;
+
+            controlPoints[0] = new ControlPoint<Vector3>(P0, 1.0);
+
+            int index = 0;
+            double angle = startRad;
+
+            for (int i = 1; i <= narcs; i++)
+            {
+                angle += dtheta;
+                Vector3 P2 =
+                    center
+                    + (float)(xRadius * Math.Cos(angle)) * nX
+                    + (float)(yRadius * Math.Sin(angle)) * nY;
+                controlPoints[index + 2] = new ControlPoint<Vector3>(P2, 1.0);
+
+                Vector3 T2 = (float)-Math.Sin(angle) * nX + (float)Math.Cos(angle) * nY;
+
+                var type = Intersection.ComputeRays(
+                    P0,
+                    T0,
+                    P2,
+                    T2,
+                    out double param0,
+                    out double param2,
+                    out Vector3 P1
+                );
+
+                if (type != CurveCurveIntersectionType.Intersecting)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to compute arc control points (tangents do not intersect)."
+                    );
+                }
+
+                controlPoints[index + 1] = new ControlPoint<Vector3>(P1, w1);
+                index = index + 2;
+
+                if (i < narcs)
+                {
+                    P0 = P2;
+                    T0 = T2;
+                }
+            }
+
+            int j = 2 * narcs + 1;
+            for (int i = 0; i < 3; i++)
+            {
+                knotVector[i] = 0.0;
+                knotVector[i + j] = 1.0;
+            }
+
+            switch (narcs)
+            {
+                case 1:
+                    break;
+                case 2:
+                    knotVector[3] = knotVector[4] = 0.5;
+                    break;
+                case 3:
+                    knotVector[3] = knotVector[4] = 1.0 / 3.0;
+                    knotVector[5] = knotVector[6] = 2.0 / 3.0;
+                    break;
+                case 4:
+                    knotVector[3] = knotVector[4] = 0.25;
+                    knotVector[5] = knotVector[6] = 0.5;
+                    knotVector[7] = knotVector[8] = 0.75;
+                    break;
+            }
+
+            return new NurbsCurve<Vector3>(degree, controlPoints, knotVector);
+        }
+
+        public static bool CreateOneConicArc(
+            Vector3 start,
+            Vector3 startTangent,
+            Vector3 end,
+            Vector3 endTangent,
+            Vector3 pointOnConic,
+            out Vector3 projectPoint,
+            out double projectPointWeight
+        )
+        {
+            Validate.Argument(
+                !MathUtils.IsZero(startTangent),
+                nameof(startTangent),
+                "StartTangent must not be zero vector."
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(endTangent),
+                nameof(endTangent),
+                "EndTangent must not be zero vector."
+            );
+
+            projectPoint = default;
+            projectPointWeight = 0.0;
+
+            var type = Intersection.ComputeRays(
+                start,
+                startTangent,
+                end,
+                endTangent,
+                out _,
+                out _,
+                out Vector3 point
+            );
+
+            Vector3 pDiff = end - start;
+
+            if (type == CurveCurveIntersectionType.Intersecting)
+            {
+                Vector3 v1p = pointOnConic - point;
+                type = Intersection.ComputeRays(
+                    point,
+                    v1p,
+                    start,
+                    pDiff,
+                    out double alf0,
+                    out double alf2,
+                    out _
+                );
+
+                if (type == CurveCurveIntersectionType.Intersecting)
+                {
+                    double a = Math.Sqrt(alf2 / (1.0 - alf2));
+                    double u = a / (1.0 + a);
+
+                    double dot1 = Vector3.Dot(pointOnConic - start, point - pointOnConic);
+                    double dot2 = Vector3.Dot(pointOnConic - end, point - pointOnConic);
+                    double dotDen = Vector3.Dot(point - pointOnConic, point - pointOnConic);
+
+                    double num = (1.0 - u) * (1.0 - u) * dot1 + u * u * dot2;
+                    double den = 2.0 * u * (1.0 - u) * dotDen;
+
+                    projectPoint = point;
+                    projectPointWeight = num / den;
+                    return true;
+                }
+            }
+            else if (type == CurveCurveIntersectionType.Parallel)
+            {
+                type = Intersection.ComputeRays(
+                    pointOnConic,
+                    startTangent,
+                    start,
+                    pDiff,
+                    out double alf0,
+                    out double alf2,
+                    out _
+                );
+
+                if (type == CurveCurveIntersectionType.Intersecting)
+                {
+                    double a = Math.Sqrt(alf2 / (1.0 - alf2));
+                    double u = a / (1.0 + a);
+                    double b = 2.0 * u * (1.0 - u);
+                    b = -alf0 * (1.0 - b) / b;
+
+                    projectPoint = startTangent * (float)b;
+                    projectPointWeight = 0.0;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static Vector3 GetPointOnCurve(NurbsCurve<Vector3> curve, double paramT)
         {
             var degree = curve.Degree;
@@ -976,6 +1310,23 @@ namespace Nurbsy.Helpers
             left = new NurbsCurve<Vector3>(degree, leftCPs, leftKnots);
 
             return true;
+        }
+
+        public static void SplitArc(
+            Vector3 start,
+            Vector3 projectPoint,
+            double projectPointWeight,
+            Vector3 end,
+            out Vector3 insertPointAtStartSide,
+            out Vector3 splitPoint,
+            out Vector3 insertPointAtEndSide,
+            out double insertWeight
+        )
+        {
+            insertPointAtStartSide = start + projectPoint;
+            insertPointAtEndSide = end + projectPoint;
+            splitPoint = (insertPointAtStartSide + insertPointAtEndSide) * 0.5f;
+            insertWeight = Math.Sqrt(1 + projectPointWeight) * 0.5;
         }
 
         public static bool Segment(

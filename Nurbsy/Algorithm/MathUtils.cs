@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Stride.Core.Mathematics;
 
 namespace Nurbsy.Algorithm
@@ -61,17 +62,98 @@ namespace Nurbsy.Algorithm
             return v.LengthSquared() <= (float)(epsilon * epsilon);
         }
 
+        // Gaussian elimination solver for Ax = B
+        public static double[][] SolveLinearSystem(double[][] A, double[][] B)
+        {
+            int n = A.Length;
+            int m = A[0].Length;
+            int p = B[0].Length;
+
+            Debug.Assert(n == m, "Matrix A must be square.");
+            Debug.Assert(A.Length == B.Length, "Matrix A and B must have same number of rows.");
+
+            // Deep copy A and B to avoid modifying originals (if needed, or just work on clones)
+            // Working with arrays of arrays
+            var ACopy = new double[n][];
+            for (int i = 0; i < n; i++)
+            {
+                ACopy[i] = new double[n];
+                Array.Copy(A[i], ACopy[i], n);
+            }
+
+            var Result = new double[n][];
+            for (int i = 0; i < n; i++)
+            {
+                Result[i] = new double[p];
+                Array.Copy(B[i], Result[i], p);
+            }
+
+            // Forward elimination
+            for (int i = 0; i < n; i++)
+            {
+                // Pivot
+                int pivot = i;
+                for (int j = i + 1; j < n; j++)
+                {
+                    if (Math.Abs(ACopy[j][i]) > Math.Abs(ACopy[pivot][i]))
+                    {
+                        pivot = j;
+                    }
+                }
+
+                // Swap rows
+                var tempA = ACopy[i];
+                ACopy[i] = ACopy[pivot];
+                ACopy[pivot] = tempA;
+
+                var tempB = Result[i];
+                Result[i] = Result[pivot];
+                Result[pivot] = tempB;
+
+                if (Math.Abs(ACopy[i][i]) < Epsilon)
+                    throw new InvalidOperationException("Matrix is singular.");
+
+                for (int j = i + 1; j < n; j++)
+                {
+                    double factor = ACopy[j][i] / ACopy[i][i];
+                    for (int k = i; k < n; k++)
+                    {
+                        ACopy[j][k] -= factor * ACopy[i][k];
+                    }
+                    for (int k = 0; k < p; k++)
+                    {
+                        Result[j][k] -= factor * Result[i][k];
+                    }
+                }
+            }
+
+            // Backward substitution
+            for (int i = n - 1; i >= 0; i--)
+            {
+                for (int k = 0; k < p; k++)
+                {
+                    double sum = 0;
+                    for (int j = i + 1; j < n; j++)
+                    {
+                        sum += ACopy[i][j] * Result[j][k];
+                    }
+                    Result[i][k] = (Result[i][k] - sum) / ACopy[i][i];
+                }
+            }
+
+            return Result;
+        }
+
         public static double Binomial(int n, int k)
         {
             if (k < 0 || k > n)
-                return 0.0;
+                return 0;
             if (k == 0 || k == n)
-                return 1.0;
-
+                return 1;
             if (k > n / 2)
                 k = n - k;
 
-            double res = 1.0;
+            double res = 1;
             for (int i = 1; i <= k; ++i)
             {
                 res = res * (n - i + 1) / i;

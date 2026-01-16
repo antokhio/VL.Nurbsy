@@ -440,6 +440,60 @@ namespace Nurbsy.Helpers
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public static bool FitWithCubic<T>(
+            IReadOnlyList<T> throughPoints,
+            int startPointIndex,
+            int endPointIndex,
+            T startTangent,
+            T endTangent,
+            double maxError,
+            List<ControlPoint<T>> middleControlPoints
+        )
+            where T : struct
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector2>>(ref throughPoints);
+                var sT = Unsafe.As<T, Vector2>(ref startTangent);
+                var eT = Unsafe.As<T, Vector2>(ref endTangent);
+                var middleCPs = Unsafe.As<List<ControlPoint<T>>, List<ControlPoint<Vector2>>>(
+                    ref middleControlPoints
+                );
+
+                return NurbsCurve2DHelper.FitWithCubic(
+                    points,
+                    startPointIndex,
+                    endPointIndex,
+                    sT,
+                    eT,
+                    maxError,
+                    middleCPs
+                );
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                var points = Unsafe.As<IReadOnlyList<T>, IReadOnlyList<Vector3>>(ref throughPoints);
+                var sT = Unsafe.As<T, Vector3>(ref startTangent);
+                var eT = Unsafe.As<T, Vector3>(ref endTangent);
+                var middleCPs = Unsafe.As<List<ControlPoint<T>>, List<ControlPoint<Vector3>>>(
+                    ref middleControlPoints
+                );
+
+                return NurbsCurve3DHelper.FitWithCubic(
+                    points,
+                    startPointIndex,
+                    endPointIndex,
+                    sT,
+                    eT,
+                    maxError,
+                    middleCPs
+                );
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public static void SplitArc<T>(
             T start,
             T projectPoint,

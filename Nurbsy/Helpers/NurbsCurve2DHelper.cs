@@ -1658,6 +1658,213 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static bool FitWithCubic(
+            IReadOnlyList<Vector2> throughPoints,
+            int startPointIndex,
+            int endPointIndex,
+            Vector2 startTangent,
+            Vector2 endTangent,
+            double maxError,
+            List<ControlPoint<Vector2>> middleControlPoints
+        )
+        {
+            Validate.Argument(
+                throughPoints.Count >= 3,
+                nameof(throughPoints),
+                "ThroughPoints size must be greater than 2."
+            );
+            Validate.Range(startPointIndex, 0, throughPoints.Count - 1, nameof(startPointIndex));
+            Validate.Range(
+                endPointIndex,
+                startPointIndex + 1,
+                throughPoints.Count - 1,
+                nameof(endPointIndex)
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(startTangent),
+                nameof(startTangent),
+                "StartTangent must not be zero vector."
+            );
+            Validate.Argument(
+                !MathUtils.IsZero(endTangent),
+                nameof(endTangent),
+                "EndTangent must not be zero vector."
+            );
+
+            var startPoint = throughPoints[startPointIndex];
+            var endPoint = throughPoints[endPointIndex];
+            int size = throughPoints.Count;
+
+            if (endPointIndex - startPointIndex == 1)
+            {
+                if (!Interpolation.TryComputeTangents(throughPoints, out var tangents))
+                    return false;
+
+                Vector2 dks;
+                if (startPointIndex == 0)
+                {
+                    dks = tangents[startPointIndex];
+                }
+                else
+                {
+                    double d1 = Vector2.Distance(endPoint, startPoint);
+                    double d2 = Vector2.Distance(startPoint, throughPoints[startPointIndex - 1]);
+                    dks = (float)(d1 / d2) * startTangent;
+                }
+
+                Vector2 dke;
+                if (endPointIndex == size - 1)
+                {
+                    dke = tangents[endPointIndex];
+                }
+                else
+                {
+                    double d1 = Vector2.Distance(throughPoints[endPointIndex + 1], endPoint);
+                    double d2 = Vector2.Distance(endPoint, startPoint);
+                    dke = (float)(d1 / d2) * endTangent;
+                }
+
+                double alpha = dks.Length() / 3.0;
+                double beta = -dke.Length() / 3.0;
+
+                var p1 = startPoint + (float)alpha * startTangent;
+                var p2 = endPoint + (float)beta * endTangent;
+
+                middleControlPoints.Add(new ControlPoint<Vector2>(p1, 1.0));
+                middleControlPoints.Add(new ControlPoint<Vector2>(p2, 1.0));
+                return true;
+            }
+
+            int dk = endPointIndex - startPointIndex;
+            bool isLine = true;
+            Vector2 tempStandard = Vector2.Zero;
+
+            for (int i = startPointIndex; i <= endPointIndex; i++)
+            {
+                var tp = throughPoints[i];
+                if (MathUtils.IsAlmostEqualTo(tp, startPoint))
+                    continue;
+
+                var direction = tp - startPoint;
+                direction.Normalize();
+
+                if (MathUtils.IsZero(tempStandard))
+                {
+                    tempStandard = direction;
+                }
+                else
+                {
+                    if (!MathUtils.IsAlmostEqualTo(tempStandard, direction))
+                    {
+                        isLine = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isLine)
+            {
+                var p1 = (2.0f * startPoint + endPoint) / 3.0f;
+                var p2 = (startPoint + 2.0f * endPoint) / 3.0f;
+                middleControlPoints.Add(new ControlPoint<Vector2>(p1, 1.0));
+                middleControlPoints.Add(new ControlPoint<Vector2>(p2, 1.0));
+                return true;
+            }
+
+            var newThroughPoints = new List<Vector2>(dk + 1);
+            for (int i = startPointIndex; i <= endPointIndex; i++)
+                newThroughPoints.Add(throughPoints[i]);
+
+            var uh = Interpolation.GetChordParameterization(newThroughPoints);
+            var alphak = new double[dk + 1];
+            var betak = new double[dk + 1];
+            bool possible = true;
+
+            for (int k = 1; k < dk; k++)
+            {
+                double u = uh[k];
+                double s = 1.0 - u;
+
+                double b0 = s * s * s;
+                double b1 = 3 * s * s * u;
+                double b2 = 3 * s * u * u;
+                double b3 = u * u * u;
+
+                var termP0 = (float)(b0 + b1) * startPoint;
+                var termP3 = (float)(b2 + b3) * endPoint;
+                var rhs = throughPoints[startPointIndex + k] - termP0 - termP3;
+
+                var vecA = (float)b1 * startTangent;
+                var vecB = (float)b2 * endTangent;
+
+                double det = vecA.X * vecB.Y - vecA.Y * vecB.X;
+                if (Math.Abs(det) < MathUtils.Epsilon)
+                {
+                    possible = false;
+                    break;
+                }
+
+                double ak = (rhs.X * vecB.Y - rhs.Y * vecB.X) / det;
+                double bk = (vecA.X * rhs.Y - vecA.Y * rhs.X) / det;
+
+                if (ak > 0.0 && bk < 0.0)
+                {
+                    alphak[k] = ak;
+                    betak[k] = bk;
+                }
+                else
+                {
+                    possible = false;
+                    break;
+                }
+            }
+
+            if (!possible)
+                return false;
+
+            double alphaAvg = 0.0;
+            double betaAvg = 0.0;
+            for (int k = 1; k < dk; k++)
+            {
+                alphaAvg += alphak[k];
+                betaAvg += betak[k];
+            }
+            alphaAvg /= (dk - 1);
+            betaAvg /= (dk - 1);
+
+            var finalP1 = startPoint + (float)alphaAvg * startTangent;
+            var finalP2 = endPoint + (float)betaAvg * endTangent;
+
+            var controlPoints = new ControlPoint<Vector2>[]
+            {
+                new ControlPoint<Vector2>(startPoint, 1.0),
+                new ControlPoint<Vector2>(finalP1, 1.0),
+                new ControlPoint<Vector2>(finalP2, 1.0),
+                new ControlPoint<Vector2>(endPoint, 1.0),
+            };
+
+            var curve = new BezierCurve<Vector2>(controlPoints);
+
+            for (int k = 1; k < dk; k++)
+            {
+                double u = uh[k];
+                var p = BezierCurve2DHelper.GetPointOnCurveByBernstein(curve, u);
+                if (
+                    MathUtils.IsGreaterThan(
+                        Vector2.Distance(throughPoints[startPointIndex + k], p),
+                        maxError
+                    )
+                )
+                {
+                    return false;
+                }
+            }
+
+            middleControlPoints.Add(new ControlPoint<Vector2>(finalP1, 1.0));
+            middleControlPoints.Add(new ControlPoint<Vector2>(finalP2, 1.0));
+            return true;
+        }
+
         public static Vector2 GetPointOnCurve(NurbsCurve<Vector2> curve, double paramT)
         {
             var degree = curve.Degree;

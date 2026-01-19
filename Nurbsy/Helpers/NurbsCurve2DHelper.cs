@@ -2797,6 +2797,77 @@ namespace Nurbsy.Helpers
             return result;
         }
 
+        public static bool IsPeriodic(NurbsCurve<Vector2> curve)
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+            int size = controlPoints.Count;
+
+            if (KnotsUtils.IsClamped(degree, knots))
+                return false;
+
+            if (!KnotsUtils.IsUniform(knots))
+                return false;
+
+            if (size >= degree + degree)
+            {
+                bool flag = true;
+                for (int i = 0; i < degree; i++)
+                {
+                    if (
+                        !MathUtils.IsAlmostEqualTo(
+                            controlPoints[i].Value,
+                            controlPoints[size - degree + i].Value
+                        )
+                    )
+                    {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag)
+                {
+                    return true;
+                }
+            }
+
+            if (!IsClosed(curve))
+                return false;
+
+            double first = knots[0];
+            double end = knots[knots.Count - 1];
+
+            int cFirst = KnotsUtils.GetContinuity(degree, knots, first);
+            int cEnd = KnotsUtils.GetContinuity(degree, knots, end);
+
+            if (cFirst != cEnd)
+                return false;
+
+            var fDers = ComputeRationalCurveDerivatives(curve, cFirst, first);
+            var eDers = ComputeRationalCurveDerivatives(curve, cEnd, end);
+
+            for (int i = 0; i <= cFirst; i++)
+            {
+                var currentF = fDers[i];
+                var currentE = eDers[i];
+
+                var nf = Vector2.Normalize(currentF);
+                var ne = Vector2.Normalize(currentE);
+
+                bool hasSameDirection = MathUtils.IsAlmostEqualTo(nf, ne);
+                bool hasSameMagnitude = MathUtils.IsAlmostEqualTo(
+                    currentF.Length(),
+                    currentE.Length()
+                );
+                if (!hasSameDirection || !hasSameMagnitude)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public static bool IsLinear(NurbsCurve<Vector2> curve)
         {
             var count = curve.ControlPoints.Count;

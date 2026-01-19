@@ -129,5 +129,39 @@ namespace Nurbsy.Algorithm
 
             return knots;
         }
+
+        public static bool IsClamped(int degree, IReadOnlyList<double> knotVector)
+        {
+            double first = knotVector[0];
+            for (int i = 1; i <= degree; i++)
+            {
+                if (!MathUtils.IsAlmostEqualTo(knotVector[i], first))
+                    return false;
+            }
+
+            double last = knotVector[knotVector.Count - 1];
+            for (int i = knotVector.Count - 2; i >= knotVector.Count - 1 - degree; i--)
+            {
+                if (!MathUtils.IsAlmostEqualTo(knotVector[i], last))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static bool IsUniform(IReadOnlyList<double> knotVector)
+        {
+            if (knotVector.Count < 2)
+                return true;
+
+            double delta = knotVector[1] - knotVector[0];
+            for (int i = 1; i < knotVector.Count - 1; i++)
+            {
+                double d = knotVector[i + 1] - knotVector[i];
+                if (!MathUtils.IsAlmostEqualTo(d, delta))
+                    return false;
+            }
+            return true;
+        }
     }
 }

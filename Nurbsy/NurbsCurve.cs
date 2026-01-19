@@ -272,6 +272,25 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public IReadOnlyList<T> Tessellate()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                var result = NurbsCurve2DHelper.Tessellate(curve2);
+                return Unsafe.As<IReadOnlyList<Vector2>, IReadOnlyList<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                var result = NurbsCurve3DHelper.Tessellate(curve3);
+                return Unsafe.As<IReadOnlyList<Vector3>, IReadOnlyList<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public double GetParamOnCurve(T point)
         {
             if (typeof(T) == typeof(Vector2))

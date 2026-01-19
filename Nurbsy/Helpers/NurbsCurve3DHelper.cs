@@ -2316,6 +2316,128 @@ namespace Nurbsy.Helpers
             return (tessellatedPoints, correspondingKnots);
         }
 
+        private static void TessellateCore(
+            NurbsCurve<Vector3> curve,
+            double start,
+            double end,
+            List<double> parameters,
+            int depth
+        )
+        {
+            const int MaxDepth = 20;
+
+            if (depth >= MaxDepth)
+            {
+                parameters.Add((start + end) * 0.5);
+                return;
+            }
+
+            var p0 = GetPointOnCurve(curve, start);
+            var p2 = GetPointOnCurve(curve, end);
+            double mid = (start + end) * 0.5;
+            var p1 = GetPointOnCurve(curve, mid);
+
+            var chordMid = (p0 + p2) * 0.5f;
+            double deviation = Vector3.Distance(p1, chordMid);
+
+            if (MathUtils.IsAlmostEqualTo(deviation, 0.0))
+            {
+                parameters.Add(mid);
+            }
+            else
+            {
+                TessellateCore(curve, start, mid, parameters, depth + 1);
+                TessellateCore(curve, mid, end, parameters, depth + 1);
+            }
+        }
+
+        public static IReadOnlyList<Vector3> Tessellate(NurbsCurve<Vector3> curve)
+        {
+            if (curve.Degree == 1)
+            {
+                var result = new Vector3[curve.ControlPoints.Count];
+                for (int i = 0; i < curve.ControlPoints.Count; i++)
+                {
+                    result[i] = curve.ControlPoints[i].Value;
+                }
+                return result;
+            }
+
+            var uniqueKnots = new List<double>();
+            var knots = curve.Knots;
+            if (knots.Count > 0)
+            {
+                uniqueKnots.Add(knots[0]);
+                for (int i = 1; i < knots.Count; i++)
+                {
+                    if (!MathUtils.IsAlmostEqualTo(knots[i], uniqueKnots[uniqueKnots.Count - 1]))
+                    {
+                        uniqueKnots.Add(knots[i]);
+                    }
+                }
+            }
+
+            if (uniqueKnots.Count < 2)
+            {
+                var pt = GetPointOnCurve(curve, uniqueKnots[0]);
+                return new Vector3[] { pt };
+            }
+
+            var parameters = new List<double>();
+            double u_start = uniqueKnots[0];
+            double u_end = uniqueKnots[uniqueKnots.Count - 1];
+
+            parameters.Add(u_start);
+
+            for (int i = 0; i < uniqueKnots.Count - 1; ++i)
+            {
+                double u0 = uniqueKnots[i];
+                double u1 = uniqueKnots[i + 1];
+
+                if (MathUtils.IsAlmostEqualTo(u1, u0))
+                {
+                    continue;
+                }
+
+                var internalParams = new List<double>();
+                TessellateCore(curve, u0, u1, internalParams, 0);
+
+                foreach (double t in internalParams)
+                {
+                    if (parameters.Count == 0)
+                        continue;
+                    if (
+                        t > u0
+                        && t < u1
+                        && (MathUtils.IsGreaterThan(t, parameters[parameters.Count - 1]))
+                    )
+                    {
+                        parameters.Add(t);
+                    }
+                }
+
+                if (MathUtils.IsGreaterThan(u1, parameters[parameters.Count - 1]))
+                {
+                    parameters.Add(u1);
+                }
+            }
+
+            if (
+                parameters.Count == 0
+                || !MathUtils.IsAlmostEqualTo(parameters[parameters.Count - 1], u_end)
+            )
+            {
+                parameters.Add(u_end);
+            }
+
+            var points = new Vector3[parameters.Count];
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                points[i] = GetPointOnCurve(curve, parameters[i]);
+            }
+            return points;
+        }
+
         public static bool CanComputeDerivative(NurbsCurve<Vector3> curve, double paramT)
         {
             var knots = curve.Knots;

@@ -967,6 +967,37 @@ namespace Nurbsy
             return false;
         }
 
+        public bool IsArc(out T center, out double radius)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                if (NurbsCurve2DHelper.IsArc(curve2, out var c2, out radius))
+                {
+                    center = Unsafe.As<Vector2, T>(ref c2);
+                    return true;
+                }
+                center = default;
+                radius = 0.0;
+                return false;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                if (NurbsCurve3DHelper.IsArc(curve3, out var c3, out radius))
+                {
+                    center = Unsafe.As<Vector3, T>(ref c3);
+                    return true;
+                }
+                center = default;
+                radius = 0.0;
+                return false;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool IsClosed()
         {
             if (typeof(T) == typeof(Vector2))

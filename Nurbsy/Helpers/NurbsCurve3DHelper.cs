@@ -3126,6 +3126,57 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static bool IsArc(NurbsCurve<Vector3> curve, out Vector3 center, out double radius)
+        {
+            center = Vector3.Zero;
+            radius = 0.0;
+
+            if (IsLinear(curve))
+            {
+                return false;
+            }
+
+            var knots = curve.Knots;
+            double first = knots[0];
+            double end = knots[knots.Count - 1];
+
+            var p0 = GetPointOnCurve(curve, first);
+            double param = IsClosed(curve) ? 0.5 * first + 0.5 * end : end;
+            var p1 = GetPointOnCurve(curve, 0.5 * first + 0.5 * param);
+            var p2 = GetPointOnCurve(curve, param);
+
+            var v1 = p1 - p0;
+            var v2 = p2 - p0;
+            double v1v1 = Vector3.Dot(v1, v1);
+            double v2v2 = Vector3.Dot(v2, v2);
+            double v1v2 = Vector3.Dot(v1, v2);
+
+            double det = v1v1 * v2v2 - v1v2 * v1v2;
+
+            if (MathUtils.IsZero(det))
+            {
+                return false;
+            }
+
+            double baseVal = 0.5 / det;
+            double k1 = baseVal * v2v2 * (v1v1 - v1v2);
+            double k2 = baseVal * v1v1 * (v2v2 - v1v2);
+            center = p0 + v1 * (float)k1 + v2 * (float)k2;
+            radius = Vector3.Distance(center, p0);
+
+            var (tessellatedPoints, _) = EquallyTessellate(curve);
+            foreach (var point in tessellatedPoints)
+            {
+                double d = Vector3.Distance(point, center);
+                if (!MathUtils.IsAlmostEqualTo(d, radius, Constants.DistanceEpsilon))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static bool IsClosed(NurbsCurve<Vector3> curve)
         {
             var knots = curve.Knots;

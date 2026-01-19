@@ -2545,6 +2545,67 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static NurbsCurve<Vector2> Warping(
+            NurbsCurve<Vector2> curve,
+            IReadOnlyList<double> warpShape,
+            double warpDistance,
+            double startParameter,
+            double endParameter
+        )
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Argument(
+                controlPoints.Count == warpShape.Count,
+                nameof(warpShape),
+                "WarpShape size must be equal to control points size."
+            );
+            Validate.Argument(
+                !MathUtils.IsAlmostEqualTo(warpDistance, 0.0),
+                nameof(warpDistance),
+                "WarpDistance must not be zero."
+            );
+            Validate.Range(
+                startParameter,
+                knots[0],
+                knots[knots.Count - 1],
+                nameof(startParameter)
+            );
+            Validate.Range(
+                endParameter,
+                startParameter,
+                knots[knots.Count - 1],
+                nameof(endParameter)
+            );
+            Validate.Argument(
+                MathUtils.IsGreaterThan(endParameter, startParameter),
+                nameof(endParameter),
+                "EndParameter must be greater than startParameter."
+            );
+
+            double halfParameter = 0.5 * (startParameter + endParameter);
+            var derivatives = ComputeRationalCurveDerivatives(curve, 1, halfParameter);
+            var tangent = derivatives[1];
+            var normal = new Vector2(-tangent.Y, tangent.X);
+            var W = MathUtils.IsGreaterThan(warpDistance, 0.0) ? normal : -normal;
+            W = Vector2.Normalize(W);
+
+            var resultControlPoints = new ControlPoint<Vector2>[controlPoints.Count];
+            double absWarpDistance = Math.Abs(warpDistance);
+
+            for (int i = 0; i < controlPoints.Count; i++)
+            {
+                var cp = controlPoints[i];
+                var currentPoint = cp.Value;
+                var newPoint = currentPoint + (float)(warpShape[i] * absWarpDistance) * W;
+                resultControlPoints[i] = new ControlPoint<Vector2>(newPoint, cp.Weight);
+            }
+
+            return new NurbsCurve<Vector2>(degree, resultControlPoints, knots);
+        }
+
         public static bool IsLinear(NurbsCurve<Vector2> curve)
         {
             var count = curve.ControlPoints.Count;

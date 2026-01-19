@@ -3050,6 +3050,33 @@ namespace Nurbsy.Helpers
             return mid;
         }
 
+        public static List<double> GetParamsOnCurve(
+            NurbsCurve<Vector2> curve,
+            double givenLength,
+            IntegratorType type
+        )
+        {
+            var result = new List<double>();
+
+            var knots = curve.Knots;
+            double end = knots[knots.Count - 1];
+
+            double param = GetParamOnCurve(curve, givenLength, type);
+
+            while (!MathUtils.IsAlmostEqualTo(param, end))
+            {
+                result.Add(param);
+
+                if (!SplitAt(curve, param, out _, out var right))
+                {
+                    break;
+                }
+
+                param = GetParamOnCurve(right, givenLength, type);
+            }
+            return result;
+        }
+
         public static bool IsClamp(NurbsCurve<Vector2> curve)
         {
             return KnotsUtils.IsClamped(curve.Degree, curve.Knots);

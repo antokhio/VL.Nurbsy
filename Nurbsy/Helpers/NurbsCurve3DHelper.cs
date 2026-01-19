@@ -2925,6 +2925,62 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static NurbsCurve<Vector3> ToClampCurve(NurbsCurve<Vector3> curve)
+        {
+            int degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            int m = knots.Count - 1;
+            double up = knots[degree];
+            double ump = knots[m - degree];
+
+            int upMulti = Polynomials.GetKnotMultiplicity(knots, up);
+            int umpMulti = Polynomials.GetKnotMultiplicity(knots, ump);
+
+            int t1 = degree + 1 - upMulti;
+            int t2 = degree + 1 - umpMulti;
+
+            NurbsCurve<Vector3> tc = curve;
+            if (t1 > 0)
+            {
+                InsertKnot(tc, up, t1, out tc);
+            }
+            if (t2 > 0)
+            {
+                InsertKnot(tc, ump, t2, out tc);
+            }
+
+            var kv = tc.Knots;
+            var cps = tc.ControlPoints;
+            int knotsCount = knots.Count;
+            int cpCount = controlPoints.Count;
+
+            var newKnots = new double[knotsCount];
+            var newCPs = new ControlPoint<Vector3>[cpCount];
+
+            for (int i = 0; i < knotsCount; i++)
+            {
+                newKnots[i] = kv[i + degree];
+            }
+            for (int i = 0; i < cpCount; i++)
+            {
+                newCPs[i] = cps[i + degree];
+            }
+
+            var result = new NurbsCurve<Vector3>(degree, newCPs, newKnots);
+
+            bool isClosed = IsClosed(curve);
+            bool isNowClosed = IsClosed(result);
+            if (isClosed && !isNowClosed)
+            {
+                newCPs[newCPs.Length - 1] = newCPs[0];
+                result = new NurbsCurve<Vector3>(degree, newCPs, newKnots);
+            }
+
+            return result;
+        }
+
         public static bool IsClosed(NurbsCurve<Vector3> curve)
         {
             var knots = curve.Knots;

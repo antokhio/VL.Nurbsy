@@ -2751,6 +2751,81 @@ namespace Nurbsy.Helpers
             return new NurbsCurve<Vector3>(degree, resultControlPoints, knots);
         }
 
+        public static bool Flattening(
+            NurbsCurve<Vector3> curve,
+            Vector3 lineStart,
+            Vector3 lineEnd,
+            double startParameter,
+            double endParameter,
+            out NurbsCurve<Vector3> result
+        )
+        {
+            int degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Argument(
+                !MathUtils.IsAlmostEqualTo(lineStart, lineEnd),
+                nameof(lineEnd),
+                "Line end point must not be equal to line start point."
+            );
+            Validate.Range(
+                startParameter,
+                knots[0],
+                knots[knots.Count - 1],
+                nameof(startParameter)
+            );
+            Validate.Range(
+                endParameter,
+                startParameter,
+                knots[knots.Count - 1],
+                nameof(endParameter)
+            );
+            Validate.Argument(
+                endParameter > startParameter,
+                nameof(endParameter),
+                "EndParameter must be greater than StartParameter."
+            );
+
+            int spanMinIndex = Polynomials.GetKnotSpanIndex(degree, knots, startParameter);
+            int spanMaxIndex = Polynomials.GetKnotSpanIndex(degree, knots, endParameter);
+
+            var selectedControlPoints = new Dictionary<int, Vector3>();
+            for (int i = spanMinIndex; i <= spanMaxIndex - degree - 1; i++)
+            {
+                if (i >= 0 && i < controlPoints.Count)
+                {
+                    selectedControlPoints.Add(i, controlPoints[i].Value);
+                }
+            }
+
+            int projectCount = 0;
+            var updatedControlPoints = new List<ControlPoint<Vector3>>(controlPoints);
+
+            Vector3 lineVec = lineEnd - lineStart;
+            double lineLenSq = lineVec.LengthSquared();
+
+            foreach (var kvp in selectedControlPoints)
+            {
+                int index = kvp.Key;
+                Vector3 current = kvp.Value;
+
+                double t = Vector3.Dot(current - lineStart, lineVec) / (float)lineLenSq;
+                if (t >= 0.0 && t <= 1.0)
+                {
+                    projectCount++;
+                    var projected = lineStart + lineVec * (float)t;
+                    updatedControlPoints[index] = new ControlPoint<Vector3>(
+                        projected,
+                        updatedControlPoints[index].Weight
+                    );
+                }
+            }
+
+            result = new NurbsCurve<Vector3>(degree, updatedControlPoints, knots);
+            return projectCount >= degree + 1;
+        }
+
         public static bool IsLinear(NurbsCurve<Vector3> curve)
         {
             var count = curve.ControlPoints.Count;

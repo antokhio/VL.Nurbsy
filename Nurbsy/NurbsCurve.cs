@@ -837,6 +837,47 @@ namespace Nurbsy
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
+        public NurbsCurve<T> Bending(
+            double startParameter,
+            double endParameter,
+            T bendCenter,
+            double radius,
+            double crossRatio
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                ref var center2 = ref Unsafe.As<T, Vector2>(ref bendCenter);
+                var result = NurbsCurve2DHelper.Bending(
+                    curve2,
+                    startParameter,
+                    endParameter,
+                    center2,
+                    radius,
+                    crossRatio
+                );
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                ref var center3 = ref Unsafe.As<T, Vector3>(ref bendCenter);
+                var result = NurbsCurve3DHelper.Bending(
+                    curve3,
+                    startParameter,
+                    endParameter,
+                    center3,
+                    radius,
+                    crossRatio
+                );
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
+        }
+
         public bool IsLinear()
         {
             if (typeof(T) == typeof(Vector2))

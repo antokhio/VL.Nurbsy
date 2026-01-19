@@ -2681,6 +2681,66 @@ namespace Nurbsy.Helpers
             return projectCount >= degree + 1;
         }
 
+        public static NurbsCurve<Vector2> Bending(
+            NurbsCurve<Vector2> curve,
+            double startParameter,
+            double endParameter,
+            Vector2 bendCenter,
+            double radius,
+            double crossRatio
+        )
+        {
+            var degree = curve.Degree;
+            var knots = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            Validate.Range(
+                startParameter,
+                knots[0],
+                knots[knots.Count - 1],
+                nameof(startParameter)
+            );
+            Validate.Range(
+                endParameter,
+                startParameter,
+                knots[knots.Count - 1],
+                nameof(endParameter)
+            );
+
+            int spanMinIndex = Polynomials.GetKnotSpanIndex(degree, knots, startParameter);
+            int spanMaxIndex = Polynomials.GetKnotSpanIndex(degree, knots, endParameter);
+
+            var updatedControlPoints = new List<ControlPoint<Vector2>>(controlPoints);
+
+            for (int i = spanMinIndex; i <= spanMaxIndex - degree - 1; i++)
+            {
+                if (i < 0 || i >= updatedControlPoints.Count)
+                    continue;
+
+                var currentCP = updatedControlPoints[i];
+                Vector2 current = currentCP.Value;
+
+                var diff = current - bendCenter;
+
+                if (diff.LengthSquared() < Constants.DoubleEpsilon)
+                    continue;
+
+                var pointOnBendCurve = bendCenter + Vector2.Normalize(diff) * (float)radius;
+
+                double distCurrent = Vector2.Distance(bendCenter, current);
+                double distBend = Vector2.Distance(bendCenter, pointOnBendCurve);
+
+                double si = distBend / distCurrent;
+                double ti = (crossRatio * si) / (1.0 + (crossRatio - 1.0) * si);
+
+                Vector2 project = bendCenter + diff * (float)ti;
+
+                updatedControlPoints[i] = new ControlPoint<Vector2>(project, currentCP.Weight);
+            }
+
+            return new NurbsCurve<Vector2>(degree, updatedControlPoints, knots);
+        }
+
         public static bool IsLinear(NurbsCurve<Vector2> curve)
         {
             var count = curve.ControlPoints.Count;

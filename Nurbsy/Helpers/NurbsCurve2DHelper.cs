@@ -2797,6 +2797,75 @@ namespace Nurbsy.Helpers
             return result;
         }
 
+        public static NurbsCurve<Vector2> ToUnclampCurve(NurbsCurve<Vector2> curve)
+        {
+            int degree = curve.Degree;
+            var knotVector = new List<double>(curve.Knots);
+            var controlPoints = curve.ControlPoints;
+
+            int n = controlPoints.Count - 1;
+            var cw = new Vector3[controlPoints.Count];
+
+            // Convert to homogeneous coordinates
+            for (int i = 0; i <= n; i++)
+            {
+                var cp = controlPoints[i];
+                cw[i] = new Vector3(cp.Value * (float)cp.Weight, (float)cp.Weight);
+            }
+
+            for (int i = 0; i <= degree - 2; i++)
+            {
+                knotVector[degree - i - 1] =
+                    knotVector[degree - i] - (knotVector[n - i + 1] - knotVector[n - i]);
+                int k = degree - 1;
+                for (int j = i; j >= 0; j--)
+                {
+                    double alpha =
+                        (knotVector[degree] - knotVector[k])
+                        / (knotVector[degree + j + 1] - knotVector[k]);
+                    cw[j] = (cw[j] - (float)alpha * cw[j + 1]) / (float)(1.0 - alpha);
+                    k = k - 1;
+                }
+            }
+
+            knotVector[0] =
+                knotVector[1] - (knotVector[n - degree + 2] - knotVector[n - degree + 1]);
+
+            for (int i = 0; i <= degree - 2; i++)
+            {
+                knotVector[n + i + 2] =
+                    knotVector[n + i + 1] + (knotVector[degree + i + 1] - knotVector[degree + i]);
+                for (int j = i; j >= 0; j--)
+                {
+                    double alpha =
+                        (knotVector[n + 1] - knotVector[n - j])
+                        / (knotVector[n - j + i + 2] - knotVector[n - j]);
+                    cw[n - j] = (cw[n - j] - (float)(1.0 - alpha) * cw[n - j - 1]) / (float)alpha;
+                }
+            }
+
+            knotVector[n + degree + 1] =
+                knotVector[n + degree] + (knotVector[2 * degree] - knotVector[2 * degree - 1]);
+
+            var newControlPoints = new ControlPoint<Vector2>[controlPoints.Count];
+            for (int i = 0; i <= n; i++)
+            {
+                if (MathUtils.IsZero(cw[i].Z))
+                {
+                    newControlPoints[i] = new ControlPoint<Vector2>(Vector2.Zero, 0.0);
+                }
+                else
+                {
+                    newControlPoints[i] = new ControlPoint<Vector2>(
+                        new Vector2(cw[i].X, cw[i].Y) / cw[i].Z,
+                        cw[i].Z
+                    );
+                }
+            }
+
+            return new NurbsCurve<Vector2>(degree, newControlPoints, knotVector);
+        }
+
         public static bool IsPeriodic(NurbsCurve<Vector2> curve)
         {
             var degree = curve.Degree;

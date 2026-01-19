@@ -6,7 +6,7 @@ using VL.Model;
 namespace VL.Nurbsy
 {
     [ProcessNode]
-    public abstract class NurbsCurveNode<T> : IDisposable
+    public abstract class NurbsCurveNode<T>
         where T : struct
     {
         internal const int DefaultDegree = 2;
@@ -94,8 +94,6 @@ namespace VL.Nurbsy
                 throw;
             }
         }
-
-        public void Dispose() { }
     }
 
     [ProcessNode(Name = "NurbsCurve (2D)")]

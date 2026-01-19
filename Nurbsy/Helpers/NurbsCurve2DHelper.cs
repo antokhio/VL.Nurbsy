@@ -2276,6 +2276,7 @@ namespace Nurbsy.Helpers
             double start,
             double end,
             List<double> parameters,
+            double tolerance,
             int depth
         )
         {
@@ -2295,18 +2296,18 @@ namespace Nurbsy.Helpers
             var chordMid = (p0 + p2) * 0.5f;
             double deviation = Vector2.Distance(p1, chordMid);
 
-            if (MathUtils.IsAlmostEqualTo(deviation, 0.0))
+            if (deviation <= tolerance)
             {
                 parameters.Add(mid);
             }
             else
             {
-                TessellateCore(curve, start, mid, parameters, depth + 1);
-                TessellateCore(curve, mid, end, parameters, depth + 1);
+                TessellateCore(curve, start, mid, parameters, tolerance, depth + 1);
+                TessellateCore(curve, mid, end, parameters, tolerance, depth + 1);
             }
         }
 
-        public static IReadOnlyList<Vector2> Tessellate(NurbsCurve<Vector2> curve)
+        public static IReadOnlyList<Vector2> Tessellate(NurbsCurve<Vector2> curve, double tolerance)
         {
             if (curve.Degree == 1)
             {
@@ -2355,7 +2356,7 @@ namespace Nurbsy.Helpers
                 }
 
                 var internalParams = new List<double>();
-                TessellateCore(curve, u0, u1, internalParams, 0);
+                TessellateCore(curve, u0, u1, internalParams, tolerance, 0);
 
                 foreach (double t in internalParams)
                 {

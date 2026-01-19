@@ -2866,6 +2866,125 @@ namespace Nurbsy.Helpers
             return new NurbsCurve<Vector2>(degree, newControlPoints, knotVector);
         }
 
+        public static double ApproximateLength(NurbsCurve<Vector2> curve, IntegratorType type)
+        {
+            if (IsLinear(curve))
+            {
+                var start = curve.ControlPoints[0].Value;
+                var end = curve.ControlPoints[curve.ControlPoints.Count - 1].Value;
+                return Vector2.Distance(start, end);
+            }
+
+            if (curve.Degree == 1)
+            {
+                Validate.Argument(false, nameof(curve), "Curve Degree is one but is not linear.");
+            }
+
+            var reCurve = Reparametrize(curve, 0.0, 1.0);
+            double length = 0.0;
+            var knots = reCurve.Knots;
+
+            switch (type)
+            {
+                case IntegratorType.Simpson:
+                {
+                    double start = knots[0];
+                    double end = knots[knots.Count - 1];
+                    double simpson = Integrator.Simpson(GetDerivativeLength, reCurve, start, end);
+                    length = CalculateLengthBySimpson(
+                        GetDerivativeLength,
+                        reCurve,
+                        start,
+                        end,
+                        simpson,
+                        Constants.DistanceEpsilon
+                    );
+                    break;
+                }
+                case IntegratorType.GaussLegendre:
+                {
+                    var bezierCurves = DecomposeToBeziers(reCurve);
+                    var abscissae = Integrator.GaussLegendreAbscissae;
+                    var weights = Integrator.GaussLegendreWeights;
+                    int size = abscissae.Count;
+
+                    for (int i = 0; i < bezierCurves.Count; i++)
+                    {
+                        var bezier = bezierCurves[i];
+                        var bCurve = new NurbsCurve<Vector2>(bezier.Degree, bezier.ControlPoints);
+
+                        double bLength = 0.0;
+                        double halfDist = 0.5;
+                        double mid = 0.5;
+
+                        for (int k = 0; k < size; k++)
+                        {
+                            double t = halfDist * abscissae[k] + mid;
+                            var der = ComputeRationalCurveDerivatives(bCurve, 1, t);
+                            double derLen = der[1].Length();
+                            if (double.IsNaN(derLen))
+                                derLen = 0.0;
+                            bLength += weights[k] * derLen;
+                        }
+                        length += halfDist * bLength;
+                    }
+                    break;
+                }
+                case IntegratorType.Chebyshev:
+                {
+                    var series = Integrator.ChebyshevSeries(513);
+                    var controlPoints = reCurve.ControlPoints;
+                    for (int i = reCurve.Degree; i < controlPoints.Count; i++)
+                    {
+                        double a = knots[i];
+                        double b = knots[i + 1];
+                        if (MathUtils.IsAlmostEqualTo(a, b))
+                            continue;
+
+                        length += Integrator.ClenshawCurtisQuadrature(
+                            GetDerivativeLength,
+                            reCurve,
+                            a,
+                            b,
+                            series,
+                            Constants.DistanceEpsilon
+                        );
+                    }
+                    break;
+                }
+            }
+            return length;
+        }
+
+        private static double GetDerivativeLength(double t, object customData)
+        {
+            var curve = (NurbsCurve<Vector2>)customData;
+            var derivs = ComputeRationalCurveDerivatives(curve, 1, t);
+            return derivs[1].Length();
+        }
+
+        private static double CalculateLengthBySimpson(
+            IntegrationFunction function,
+            object customData,
+            double start,
+            double end,
+            double simpson,
+            double epsilon
+        )
+        {
+            double m = (start + end) / 2.0;
+            double left = Integrator.Simpson(function, customData, start, m);
+            double right = Integrator.Simpson(function, customData, m, end);
+
+            if (Math.Abs(left + right - simpson) <= 15.0 * epsilon)
+            {
+                return left + right + (left + right - simpson) / 15.0;
+            }
+
+            return CalculateLengthBySimpson(function, customData, start, m, left, epsilon / 2.0)
+                + CalculateLengthBySimpson(function, customData, m, end, right, epsilon / 2.0);
+        }
+
         public static bool IsClamp(NurbsCurve<Vector2> curve)
         {
             return KnotsUtils.IsClamped(curve.Degree, curve.Knots);

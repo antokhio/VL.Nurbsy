@@ -3050,6 +3050,11 @@ namespace Nurbsy.Helpers
             return new NurbsCurve<Vector3>(degree, newControlPoints, knotVector);
         }
 
+        public static bool IsClamp(NurbsCurve<Vector3> curve)
+        {
+            return KnotsUtils.IsClamped(curve.Degree, curve.Knots);
+        }
+
         public static bool IsPeriodic(NurbsCurve<Vector3> curve)
         {
             var degree = curve.Degree;

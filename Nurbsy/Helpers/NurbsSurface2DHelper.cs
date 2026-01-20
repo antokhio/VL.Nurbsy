@@ -1596,6 +1596,7 @@ namespace Nurbsy.Helpers
             correspondingUVs = uvs;
         }
 
+        /// <inheritdoc cref="NurbsSurface{T}.GetParamOnSurface(T, int, double)"/>
         public static Vector2 GetParamOnSurface(
             in NurbsSurface<Vector2> surface,
             Vector2 givenPoint,
@@ -1756,6 +1757,77 @@ namespace Nurbsy.Helpers
             }
 
             return param;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetParamOnSurfaceByGSA(T, int, double)"/>
+        /// <remarks>Optimized for 2d</remarks>
+        public static Vector2 GetParamOnSurfaceByGSA(
+            in NurbsSurface<Vector2> surface,
+            Vector2 givenPoint,
+            int maxIterations = 1000,
+            double tolerance = 1e-10
+        )
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            double minU = knotsU[0];
+            double maxU = knotsU[^1];
+            double minV = knotsV[0];
+            double maxV = knotsV[^1];
+
+            // Start at the center of the parameter domain
+            double u0 = (maxU + minU) * 0.5;
+            double v0 = (maxV + minV) * 0.5;
+
+            for (int counter = 0; counter < maxIterations; counter++)
+            {
+                var initialUV = new Vector2((float)u0, (float)v0);
+                var p0 = GetPointOnSurface(in surface, initialUV);
+
+                var ders = ComputeRationalSurfaceDerivatives(in surface, 2, initialUV);
+                var Su = ders[1][0];
+                var Sv = ders[0][1];
+
+                // First fundamental form coefficients (2D simplified)
+                double E = Vector2.Dot(Su, Su);
+                double F = Vector2.Dot(Su, Sv);
+                double G = Vector2.Dot(Sv, Sv);
+
+                double denominator = E * G - F * F;
+                if (MathUtils.IsZero(denominator))
+                {
+                    return new Vector2((float)tolerance, (float)tolerance);
+                }
+
+                var diff = givenPoint - p0;
+                double s1 = Vector2.Dot(diff, Su);
+                double s2 = Vector2.Dot(diff, Sv);
+
+                double deltaU = (s1 * G - s2 * F) / denominator;
+                double deltaV = (-s1 * F + s2 * E) / denominator;
+
+                double ut = u0 + deltaU;
+                double vt = v0 + deltaV;
+
+                // Clamp to parameter domain
+                ut = Math.Clamp(ut, minU, maxU);
+                vt = Math.Clamp(vt, minV, maxV);
+
+                // Check convergence
+                bool condition1 = Math.Abs(deltaU) <= tolerance && Math.Abs(deltaV) <= tolerance;
+                bool condition2 = (deltaU * deltaU + deltaV * deltaV) <= tolerance;
+
+                if (condition1 || condition2)
+                {
+                    return new Vector2((float)ut, (float)vt);
+                }
+
+                u0 = ut;
+                v0 = vt;
+            }
+
+            return new Vector2((float)u0, (float)v0);
         }
 
         /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>

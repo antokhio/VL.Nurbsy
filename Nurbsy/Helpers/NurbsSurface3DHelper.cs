@@ -1831,6 +1831,144 @@ namespace Nurbsy.Helpers
             return param;
         }
 
+        /// <inheritdoc cref="NurbsSurface{T}.GetParamOnSurfaceByGSA(T, int, double)"/>
+        public static Vector2 GetParamOnSurfaceByGSA(
+            in NurbsSurface<Vector3> surface,
+            Vector3 givenPoint,
+            int maxIterations = 1000,
+            double tolerance = 1e-10
+        )
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            double minU = knotsU[0];
+            double maxU = knotsU[^1];
+            double minV = knotsV[0];
+            double maxV = knotsV[^1];
+
+            // Start at the center of the parameter domain
+            double u0 = (maxU + minU) * 0.5;
+            double v0 = (maxV + minV) * 0.5;
+
+            for (int counter = 0; counter < maxIterations; counter++)
+            {
+                var initialUV = new Vector2((float)u0, (float)v0);
+                var p0 = GetPointOnSurface(in surface, initialUV);
+                var normal = ComputeNormal(in surface, initialUV);
+
+                var ders = ComputeRationalSurfaceDerivatives(in surface, 2, initialUV);
+                var Su = ders[1][0];
+                var Sv = ders[0][1];
+                var Suu = ders[2][0];
+                var Svv = ders[0][2];
+                var Suv = ders[1][1];
+
+                // Second fundamental form coefficients
+                double L = Vector3.Dot(Suu, normal);
+                double M = Vector3.Dot(Suv, normal);
+                double N = Vector3.Dot(Svv, normal);
+
+                // First fundamental form coefficients
+                double E = Vector3.Dot(Su, Su);
+                double F = Vector3.Dot(Su, Sv);
+                double G = Vector3.Dot(Sv, Sv);
+
+                double denominator = E * G - F * F;
+                if (MathUtils.IsZero(denominator))
+                {
+                    return new Vector2((float)tolerance, (float)tolerance);
+                }
+
+                double c1 = Vector3.Dot(Su, normal);
+                double c2 = Vector3.Dot(Sv, normal);
+
+                var diff = givenPoint - p0;
+                double s1 = Vector3.Dot(diff, Su);
+                double s2 = Vector3.Dot(diff, Sv);
+                double s3 = Vector3.Dot(diff, normal);
+
+                double denom2 = c1 * c1 * G - 2 * c1 * c2 * F + c2 * c2 * E - E * G + F * F;
+                if (MathUtils.IsZero(denom2))
+                {
+                    // Fallback to simple projection
+                    double deltaU = (s1 * G - s2 * F) / denominator;
+                    double deltaV = (-s1 * F + s2 * E) / denominator;
+                    u0 += deltaU;
+                    v0 += deltaV;
+                    continue;
+                }
+
+                double a1 =
+                    -(c1 * c2 * s2 - c1 * G * s3 - c2 * c2 * s1 + c2 * F * s3 - F * s2 + G * s1)
+                    / denom2;
+                double a2 =
+                    (c1 * c1 * s2 - c1 * c2 * s1 - c1 * F * s3 + c2 * E * s3 - E * s2 + F * s1)
+                    / denom2;
+
+                double curvatureDenom = E * a1 * a1 + 2 * F * a1 * a2 + G * a2 * a2;
+                if (MathUtils.IsZero(curvatureDenom))
+                {
+                    continue;
+                }
+
+                double curvature = (L * a1 * a1 + 2 * M * a1 * a2 + N * a2 * a2) / curvatureDenom;
+                double radius = MathUtils.IsZero(curvature)
+                    ? double.MaxValue
+                    : 1.0 / Math.Abs(curvature);
+
+                // Compute center of osculating sphere
+                var m = p0 + (float)radius * normal;
+
+                // Project given point onto sphere and back
+                double mDist = (m - givenPoint).Length();
+                Vector3 q;
+                if (MathUtils.IsZero(mDist))
+                {
+                    q = givenPoint;
+                }
+                else
+                {
+                    q = givenPoint + (m - givenPoint) * (float)(1 - radius / mDist);
+                }
+
+                var qp0 = q - p0;
+                double c4 = Vector3.Dot(qp0, Su);
+                double c5 = Vector3.Dot(qp0, Sv);
+
+                double deltaU2 = (c4 * G - c5 * F) / denominator;
+                double deltaV2 = -(c4 * F - c5 * E) / denominator;
+
+                double ut = u0 + deltaU2;
+                double vt = v0 + deltaV2;
+
+                // Clamp to parameter domain
+                ut = Math.Clamp(ut, minU, maxU);
+                vt = Math.Clamp(vt, minV, maxV);
+
+                // Check convergence
+                bool condition1 = Math.Abs(deltaU2) <= tolerance && Math.Abs(deltaV2) <= tolerance;
+                bool condition2 = (deltaU2 * deltaU2 + deltaV2 * deltaV2) <= tolerance;
+
+                if (condition1 || condition2)
+                {
+                    var newUV = new Vector2((float)ut, (float)vt);
+                    var newNormal = ComputeNormal(in surface, newUV);
+
+                    // Check if normal hasn't changed significantly (converged)
+                    if ((normal - newNormal).LengthSquared() < (float)tolerance)
+                    {
+                        return newUV;
+                    }
+                }
+
+                u0 = ut;
+                v0 = vt;
+            }
+
+            return new Vector2((float)u0, (float)v0);
+        }
+
         /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>
         public static bool IsClosed(in NurbsSurface<Vector3> surface, SurfaceDirection direction)
         {

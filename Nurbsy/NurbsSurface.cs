@@ -758,5 +758,50 @@ namespace Nurbsy
                 $"GetParamOnSurface is only supported for Vector3 surfaces."
             );
         }
+
+        /// <summary>
+        /// Find the UV parameter on the surface closest to the given point using
+        /// a Geometric Surface Algorithm (GSA) that utilizes surface curvature.
+        /// This method may converge better than Newton-Raphson for some cases.
+        /// Experimental:
+        /// According to https://jcst.ict.ac.cn/fileup/1000-9000/PDF/2019-6-9-9388.pdf
+        /// A Geometric Strategy Algorithm for Orthogonal Projection onto a Parametric Surface
+        /// </summary>
+        /// <param name="givenPoint">The point to find the closest parameter for.</param>
+        /// <param name="maxIterations">Maximum number of iterations (default 1000).</param>
+        /// <param name="tolerance">Convergence tolerance (default 1e-10).</param>
+        /// <returns>The UV parameter closest to the given point.</returns>
+        public Vector2 GetParamOnSurfaceByGSA(
+            T givenPoint,
+            int maxIterations = 1000,
+            double tolerance = 1e-10
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var point = Unsafe.As<T, Vector2>(ref givenPoint);
+                return NurbsSurface2DHelper.GetParamOnSurfaceByGSA(
+                    in surface,
+                    point,
+                    maxIterations,
+                    tolerance
+                );
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var point = Unsafe.As<T, Vector3>(ref givenPoint);
+                return NurbsSurface3DHelper.GetParamOnSurfaceByGSA(
+                    in surface,
+                    point,
+                    maxIterations,
+                    tolerance
+                );
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

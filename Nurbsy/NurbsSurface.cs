@@ -155,5 +155,90 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page114
+        /// Algorithm A3.7
+        /// Compute control points of derivative surfaces.
+        /// </summary>
+        /// <param name="derivative">The maximum derivative order.</param>
+        /// <param name="minSpanIndexU">Minimum span index in U direction.</param>
+        /// <param name="maxSpanIndexU">Maximum span index in U direction.</param>
+        /// <param name="minSpanIndexV">Minimum span index in V direction.</param>
+        /// <param name="maxSpanIndexV">Maximum span index in V direction.</param>
+        /// <returns>4D array PKL[k][l][i][j] of derivative control points.</returns>
+        public T[][][][] GetControlPointsOfDerivatives(
+            int derivative,
+            int minSpanIndexU,
+            int maxSpanIndexU,
+            int minSpanIndexV,
+            int maxSpanIndexV
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.ComputeControlPointsOfDerivatives(
+                    in surface,
+                    derivative,
+                    minSpanIndexU,
+                    maxSpanIndexU,
+                    minSpanIndexV,
+                    maxSpanIndexV
+                );
+                return Unsafe.As<Vector2[][][][], T[][][][]>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.ComputeControlPointsOfDerivatives(
+                    in surface,
+                    derivative,
+                    minSpanIndexU,
+                    maxSpanIndexU,
+                    minSpanIndexV,
+                    maxSpanIndexV
+                );
+                return Unsafe.As<Vector3[][][][], T[][][][]>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page115
+        /// Algorithm A3.8
+        /// Compute surface derivatives using all basis functions.
+        /// </summary>
+        /// <param name="derivative">The maximum derivative order to compute.</param>
+        /// <param name="uv">The uv parameter.</param>
+        /// <returns>2D array where result[k][l] is the mixed partial derivative ∂^(k+l)S/∂u^k∂v^l.</returns>
+        public T[][] GetDerivativesByAllBasisFunctions(int derivative, Vector2 uv)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.ComputeDerivativesByAllBasisFunctions(
+                    in surface,
+                    derivative,
+                    uv
+                );
+                return Unsafe.As<Vector2[][], T[][]>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.ComputeDerivativesByAllBasisFunctions(
+                    in surface,
+                    derivative,
+                    uv
+                );
+                return Unsafe.As<Vector3[][], T[][]>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

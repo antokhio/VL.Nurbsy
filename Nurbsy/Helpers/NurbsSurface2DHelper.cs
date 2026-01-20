@@ -5,6 +5,7 @@ namespace Nurbsy.Helpers
 {
     public static class NurbsSurface2DHelper
     {
+        /// <inheritdoc cref="NurbsSurface{T}.GetPointOnSurface(Vector2)"/>
         public static Vector2 GetPointOnSurface(in NurbsSurface<Vector2> surface, Vector2 uv)
         {
             var degreeU = surface.DegreeU;
@@ -50,11 +51,7 @@ namespace Nurbsy.Helpers
             return result.Weight != 0 ? result.Value / (float)result.Weight : Vector2.Zero;
         }
 
-        /// <summary>
-        /// The NURBS Book 2nd Edition Page111
-        /// Algorithm A3.6
-        /// Compute surface derivatives.
-        /// </summary>
+        /// <inheritdoc cref="NurbsSurface{T}.GetDerivatives(int, Vector2)"/>
         public static Vector2[][] ComputeDerivatives(
             in NurbsSurface<Vector2> surface,
             int derivative,
@@ -130,12 +127,7 @@ namespace Nurbsy.Helpers
             return derivatives;
         }
 
-        /// <summary>
-        /// Optimized computation for first-order surface derivatives.
-        /// </summary>
-        /// <param name="surface">The NURBS surface.</param>
-        /// <param name="uv">The uv parameter.</param>
-        /// <returns>2x2 array of first-order derivatives.</returns>
+        /// <inheritdoc cref="NurbsSurface{T}.GetFirstOrderDerivatives(Vector2)"/>
         public static Vector2[][] ComputeFirstOrderDerivatives(
             in NurbsSurface<Vector2> surface,
             Vector2 uv
@@ -196,6 +188,192 @@ namespace Nurbsy.Helpers
             }
 
             return derivatives;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetControlPointsOfDerivatives(int, int, int, int, int)"/>
+        public static Vector2[][][][] ComputeControlPointsOfDerivatives(
+            in NurbsSurface<Vector2> surface,
+            int derivative,
+            int minSpanIndexU,
+            int maxSpanIndexU,
+            int minSpanIndexV,
+            int maxSpanIndexV
+        )
+        {
+            var degreeU = surface.DegreeU;
+            var degreeV = surface.DegreeV;
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            Validate.Argument(
+                derivative > 0,
+                nameof(derivative),
+                "Derivative must be greater than zero."
+            );
+            Validate.Argument(
+                minSpanIndexU >= 0 && minSpanIndexU <= maxSpanIndexU,
+                nameof(minSpanIndexU),
+                "Invalid span index range."
+            );
+            Validate.Argument(
+                minSpanIndexV >= 0 && minSpanIndexV <= maxSpanIndexV,
+                nameof(minSpanIndexV),
+                "Invalid span index range."
+            );
+
+            int du = Math.Min(derivative, degreeU);
+            int dv = Math.Min(derivative, degreeV);
+            int rangeU = maxSpanIndexU - minSpanIndexU;
+            int rangeV = maxSpanIndexV - minSpanIndexV;
+
+            // Initialize PKL[k][l][i][j]
+            var PKL = new Vector2[derivative + 1][][][];
+            for (int k = 0; k <= derivative; k++)
+            {
+                PKL[k] = new Vector2[derivative + 1][][];
+                for (int l = 0; l <= derivative; l++)
+                {
+                    PKL[k][l] = new Vector2[rangeU + 1][];
+                    for (int i = 0; i <= rangeU; i++)
+                    {
+                        PKL[k][l][i] = new Vector2[rangeV + 1];
+                    }
+                }
+            }
+
+            // Compute derivatives in U direction for each V column
+            for (int j = minSpanIndexV; j <= maxSpanIndexV; j++)
+            {
+                var points = new ControlPoint<Vector2>[controlPoints.Count];
+                for (int i = 0; i < controlPoints.Count; i++)
+                {
+                    points[i] = controlPoints[i][j];
+                }
+
+                var tempCurve = new NurbsCurve<Vector2>(degreeU, points, knotsU);
+                var temp = NurbsCurve2DHelper.ComputeControlPointsOfDerivatives(
+                    in tempCurve,
+                    du,
+                    minSpanIndexU,
+                    maxSpanIndexU
+                );
+
+                for (int k = 0; k <= du; k++)
+                {
+                    for (int i = 0; i <= rangeU - k; i++)
+                    {
+                        PKL[k][0][i][j - minSpanIndexV] = temp[k][i];
+                    }
+                }
+            }
+
+            // Compute derivatives in V direction
+            for (int k = 0; k <= du; k++)
+            {
+                for (int i = 0; i <= rangeU - k; i++)
+                {
+                    int dd = Math.Min(derivative - k, dv);
+
+                    var points = new ControlPoint<Vector2>[rangeV + 1];
+                    for (int j = 0; j <= rangeV; j++)
+                    {
+                        points[j] = new ControlPoint<Vector2>(PKL[k][0][i][j], 1.0);
+                    }
+
+                    var tempKnots = new double[rangeV + degreeV + 2];
+                    for (
+                        int idx = 0;
+                        idx < tempKnots.Length && minSpanIndexV + idx < knotsV.Count;
+                        idx++
+                    )
+                    {
+                        tempKnots[idx] = knotsV[minSpanIndexV + idx];
+                    }
+
+                    var tempCurve = new NurbsCurve<Vector2>(degreeV, points, tempKnots);
+                    var temp = NurbsCurve2DHelper.ComputeControlPointsOfDerivatives(
+                        in tempCurve,
+                        dd,
+                        0,
+                        rangeV
+                    );
+
+                    for (int l = 1; l <= dd; l++)
+                    {
+                        for (int j = 0; j <= rangeV - l; j++)
+                        {
+                            PKL[k][l][i][j] = temp[l][j];
+                        }
+                    }
+                }
+            }
+
+            return PKL;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetDerivativesByAllBasisFunctions(int, Vector2)"/>
+        public static Vector2[][] ComputeDerivativesByAllBasisFunctions(
+            in NurbsSurface<Vector2> surface,
+            int derivative,
+            Vector2 uv
+        )
+        {
+            var degreeU = surface.DegreeU;
+            var degreeV = surface.DegreeV;
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            Validate.Argument(
+                derivative > 0,
+                nameof(derivative),
+                "Derivative must be greater than zero."
+            );
+            Validate.Range(uv.X, knotsU[0], knotsU[knotsU.Count - 1], nameof(uv.X));
+            Validate.Range(uv.Y, knotsV[0], knotsV[knotsV.Count - 1], nameof(uv.Y));
+
+            var SKL = new Vector2[derivative + 1][];
+            for (int i = 0; i <= derivative; i++)
+            {
+                SKL[i] = new Vector2[derivative + 1];
+            }
+
+            int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, uv.X);
+            int vSpanIndex = Polynomials.GetKnotSpanIndex(degreeV, knotsV, uv.Y);
+            double[][] Nu = Polynomials.AllBasisFunctions(uSpanIndex, degreeU, knotsU, uv.X);
+            double[][] Nv = Polynomials.AllBasisFunctions(vSpanIndex, degreeV, knotsV, uv.Y);
+
+            var PKL = ComputeControlPointsOfDerivatives(
+                in surface,
+                derivative,
+                uSpanIndex - degreeU,
+                uSpanIndex,
+                vSpanIndex - degreeV,
+                vSpanIndex
+            );
+
+            int du = Math.Min(derivative, degreeU);
+            int dv = Math.Min(derivative, degreeV);
+
+            for (int k = 0; k <= du; k++)
+            {
+                int dd = Math.Min(derivative - k, dv);
+                for (int l = 0; l <= dd; l++)
+                {
+                    SKL[k][l] = Vector2.Zero;
+                    for (int i = 0; i <= degreeV - l; i++)
+                    {
+                        var temp = Vector2.Zero;
+                        for (int j = 0; j <= degreeU - k; j++)
+                        {
+                            temp += PKL[k][l][j][i] * (float)Nu[j][degreeU - k];
+                        }
+                        SKL[k][l] += temp * (float)Nv[i][degreeV - l];
+                    }
+                }
+            }
+
+            return SKL;
         }
     }
 }

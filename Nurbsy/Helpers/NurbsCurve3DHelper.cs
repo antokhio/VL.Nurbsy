@@ -2059,6 +2059,74 @@ namespace Nurbsy.Helpers
             return end;
         }
 
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page 98, Algorithm A3.3.
+        /// Compute control points of curve derivatives.
+        /// </summary>
+        /// <param name="curve">The NURBS curve.</param>
+        /// <param name="derivative">The derivative order.</param>
+        /// <param name="minSpanIndex">Minimum span index.</param>
+        /// <param name="maxSpanIndex">Maximum span index.</param>
+        /// <returns>Control points of derivatives: PK[k][i] is the i-th point of k-th derivative.</returns>
+        public static Vector3[][] ComputeControlPointsOfDerivatives(
+            in NurbsCurve<Vector3> curve,
+            int derivative,
+            int minSpanIndex,
+            int maxSpanIndex
+        )
+        {
+            Validate.Argument(
+                derivative > 0,
+                nameof(derivative),
+                "Derivative must be greater than zero."
+            );
+            Validate.Argument(
+                minSpanIndex >= 0 && minSpanIndex <= maxSpanIndex,
+                nameof(minSpanIndex),
+                "Invalid span index range."
+            );
+
+            int degree = curve.Degree;
+            var knotVector = curve.Knots;
+            var controlPoints = curve.ControlPoints;
+
+            int range = maxSpanIndex - minSpanIndex;
+            var PK = new Vector3[derivative + 1][];
+            for (int k = 0; k <= derivative; k++)
+            {
+                PK[k] = new Vector3[range + 1];
+            }
+
+            // Initialize PK[0] with control points in the span range
+            for (int i = 0; i <= range; i++)
+            {
+                var cp = controlPoints[minSpanIndex + i];
+                PK[0][i] = cp.Value * (float)cp.Weight;
+            }
+
+            // Compute control points of derivatives
+            for (int k = 1; k <= derivative; k++)
+            {
+                int temp = degree - k + 1;
+                for (int i = 0; i <= range - k; i++)
+                {
+                    double denom =
+                        knotVector[minSpanIndex + i + degree + 1]
+                        - knotVector[minSpanIndex + i + k];
+                    if (!MathUtils.IsZero(denom))
+                    {
+                        PK[k][i] = (float)temp * (PK[k - 1][i + 1] - PK[k - 1][i]) / (float)denom;
+                    }
+                    else
+                    {
+                        PK[k][i] = Vector3.Zero;
+                    }
+                }
+            }
+
+            return PK;
+        }
+
         public static IReadOnlyList<Vector3> ComputeRationalCurveDerivatives(
             NurbsCurve<Vector3> curve,
             int derivative,

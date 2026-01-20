@@ -1596,6 +1596,169 @@ namespace Nurbsy.Helpers
             correspondingUVs = uvs;
         }
 
+        public static Vector2 GetParamOnSurface(
+            in NurbsSurface<Vector2> surface,
+            Vector2 givenPoint,
+            int maxIterations = 10,
+            double tolerance = 1e-6
+        )
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            double minUParam = knotsU[0];
+            double maxUParam = knotsU[^1];
+            double minVParam = knotsV[0];
+            double maxVParam = knotsV[^1];
+
+            bool isClosedU = IsClosed(in surface, SurfaceDirection.UDirection);
+            bool isClosedV = IsClosed(in surface, SurfaceDirection.VDirection);
+
+            // Initial guess: find closest point on tessellated surface
+            double minDistance = double.MaxValue;
+            var param = new Vector2((float)minUParam, (float)minVParam);
+
+            EquallyTessellate(in surface, out var tessellatedPoints, out var correspondingUVs, 50);
+
+            for (int i = 0; i < tessellatedPoints.Count - 1; i++)
+            {
+                var currentUV = correspondingUVs[i];
+                var nextUV = correspondingUVs[i + 1];
+                var currentPoint = tessellatedPoints[i];
+                var nextPoint = tessellatedPoints[i + 1];
+
+                var vector1 = currentPoint - givenPoint;
+                var vector2 = nextPoint - currentPoint;
+                double dot = Vector2.Dot(vector1, vector2);
+
+                Vector2 projectPoint;
+                Vector2 projectUV;
+
+                if (dot < 0)
+                {
+                    projectPoint = currentPoint;
+                    projectUV = currentUV;
+                }
+                else if (dot > 1)
+                {
+                    projectPoint = nextPoint;
+                    projectUV = nextUV;
+                }
+                else
+                {
+                    float len = vector1.Length();
+                    if (MathUtils.IsZero(len))
+                    {
+                        projectPoint = currentPoint;
+                        projectUV = currentUV;
+                    }
+                    else
+                    {
+                        projectPoint = currentPoint + (float)dot * (vector1 / len);
+                        projectUV = currentUV + (nextUV - currentUV) * (float)dot;
+                    }
+                }
+
+                double distance = (givenPoint - projectPoint).Length();
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    param = projectUV;
+                }
+            }
+
+            // Newton-Raphson refinement
+            for (int iter = 0; iter < maxIterations; iter++)
+            {
+                var derivatives = ComputeRationalSurfaceDerivatives(in surface, 2, param);
+                var difference = derivatives[0][0] - givenPoint;
+
+                var Su = derivatives[1][0];
+                var Sv = derivatives[0][1];
+                var Suu = derivatives[2][0];
+                var Svv = derivatives[0][2];
+                var Suv = derivatives[1][1];
+
+                double fa = Vector2.Dot(Su, difference);
+                double fb = Vector2.Dot(Sv, difference);
+
+                double condition1 = difference.Length();
+                double suLen = Su.Length();
+                double svLen = Sv.Length();
+
+                double condition2a = MathUtils.IsZero(suLen * condition1)
+                    ? 0
+                    : Math.Abs(fa / (suLen * condition1));
+                double condition2b = MathUtils.IsZero(svLen * condition1)
+                    ? 0
+                    : Math.Abs(fb / (svLen * condition1));
+
+                // Check convergence
+                if (condition1 < tolerance && condition2a < tolerance && condition2b < tolerance)
+                {
+                    return param;
+                }
+
+                // Compute Jacobian terms
+                double fuv = -Vector2.Dot(Su, difference);
+                double guv = -Vector2.Dot(Sv, difference);
+
+                double fu = Vector2.Dot(Su, Su) + Vector2.Dot(difference, Suu);
+                double fv = Vector2.Dot(Su, Sv) + Vector2.Dot(difference, Suv);
+                double gu = Vector2.Dot(Su, Sv) + Vector2.Dot(difference, Suv);
+                double gv = Vector2.Dot(Sv, Sv) + Vector2.Dot(difference, Svv);
+
+                double det = fu * gv - fv * gu;
+                if (MathUtils.IsZero(det))
+                {
+                    continue;
+                }
+
+                double deltaU = ((-fuv * gv) - fv * (-guv)) / det;
+                double deltaV = (fu * (-guv) - (-fuv) * gu) / det;
+
+                var temp = new Vector2(param.X + (float)deltaU, param.Y + (float)deltaV);
+
+                // Handle closed surface wrapping
+                if (isClosedU)
+                {
+                    if (temp.X < minUParam)
+                        temp.X = (float)(maxUParam - (minUParam - temp.X));
+                    else if (temp.X > maxUParam)
+                        temp.X = (float)(minUParam + (temp.X - maxUParam));
+                }
+                else
+                {
+                    temp.X = Math.Clamp(temp.X, (float)minUParam, (float)maxUParam);
+                }
+
+                if (isClosedV)
+                {
+                    if (temp.Y < minVParam)
+                        temp.Y = (float)(maxVParam - (minVParam - temp.Y));
+                    else if (temp.Y > maxVParam)
+                        temp.Y = (float)(minVParam + (temp.Y - maxVParam));
+                }
+                else
+                {
+                    temp.Y = Math.Clamp(temp.Y, (float)minVParam, (float)maxVParam);
+                }
+
+                // Check step size convergence
+                double condition4a = ((temp.X - param.X) * Su).Length();
+                double condition4b = ((temp.Y - param.Y) * Sv).Length();
+                if (condition4a + condition4b < tolerance)
+                {
+                    return temp;
+                }
+
+                param = temp;
+            }
+
+            return param;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>
         public static bool IsClosed(in NurbsSurface<Vector2> surface, SurfaceDirection direction)
         {
             Validate.Argument(
@@ -1612,7 +1775,7 @@ namespace Nurbsy.Helpers
             {
                 var transposed = MathUtils.Transpose(controlPoints);
 
-                for (int i = 0; i < transposed.Length; i++)
+                for (int i = 0; i < transposed.Count; i++)
                 {
                     var curve = new NurbsCurve<Vector2>(
                         surface.DegreeU,

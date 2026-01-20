@@ -685,5 +685,78 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// Check if the surface is closed in the specified direction.
+        /// A surface is closed in a direction if all iso-curves in that direction are closed.
+        ///  [0][0]  [0][1] ... ...  [0][m]     ------- v direction
+        ///  [1][0]  [1][1] ... ...  [1][m]    |
+        ///    .                               |
+        ///    .                               u direction
+        ///    .
+        ///  [n][0]  [n][1] ... ...  [n][m]
+        /// </summary>
+        /// <param name="direction">The direction to check (UDirection or VDirection).</param>
+        /// <returns>True if the surface is closed in the specified direction.</returns>
+        public bool IsClosed(SurfaceDirection direction)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                return NurbsSurface2DHelper.IsClosed(in surface, direction);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                return NurbsSurface3DHelper.IsClosed(in surface, direction);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page232
+        /// Point inversion:finding the corresponding parameter make S(u,v) = P.
+        /// Find the UV parameter on the surface closest to the given point.
+        /// Uses Newton-Raphson iteration with an initial guess from tessellation.
+        /// </summary>
+        /// <param name="givenPoint">The point to find the closest parameter for.</param>
+        /// <param name="maxIterations">Maximum number of iterations (default 10).</param>
+        /// <param name="tolerance">Convergence tolerance (default 1e-6).</param>
+        /// <returns>The UV parameter closest to the given point.</returns>
+        public Vector2 GetParamOnSurface(
+            T givenPoint,
+            int maxIterations = 10,
+            double tolerance = 1e-6
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var point = Unsafe.As<T, Vector2>(ref givenPoint);
+                return NurbsSurface2DHelper.GetParamOnSurface(
+                    in surface,
+                    point,
+                    maxIterations,
+                    tolerance
+                );
+            }
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var point = Unsafe.As<T, Vector3>(ref givenPoint);
+                return NurbsSurface3DHelper.GetParamOnSurface(
+                    in surface,
+                    point,
+                    maxIterations,
+                    tolerance
+                );
+            }
+
+            throw new NotSupportedException(
+                $"GetParamOnSurface is only supported for Vector3 surfaces."
+            );
+        }
     }
 }

@@ -984,5 +984,216 @@ namespace Nurbsy.Helpers
                 );
             }
         }
+
+        public static IReadOnlyList<BezierSurface<Vector2>> DecomposeToBeziers(
+            in NurbsSurface<Vector2> surface
+        )
+        {
+            int degreeU = surface.DegreeU;
+            int degreeV = surface.DegreeV;
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            int rows = controlPoints.Count;
+            int columns = controlPoints[0].Count;
+
+            // Phase 1: Decompose in U direction
+            int tempPatchCount = rows - degreeU;
+            var tempPatches = new ControlPoint<Vector2>[tempPatchCount][][];
+            for (int i = 0; i < tempPatchCount; i++)
+            {
+                tempPatches[i] = new ControlPoint<Vector2>[degreeU + 1][];
+                for (int j = 0; j <= degreeU; j++)
+                {
+                    tempPatches[i][j] = new ControlPoint<Vector2>[columns];
+                }
+            }
+
+            int m = rows - 1 + degreeU + 1;
+            int a = degreeU;
+            int b = degreeU + 1;
+            int nb = 0;
+
+            // Copy first patch control points
+            for (int i = 0; i <= degreeU; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    tempPatches[nb][i][j] = controlPoints[i][j];
+                }
+            }
+
+            var alphaVector = new double[Math.Max(degreeU, degreeV) + 1];
+
+            while (b < m)
+            {
+                int ii = b;
+                while (b < m && MathUtils.IsAlmostEqualTo(knotsU[b + 1], knotsU[b]))
+                {
+                    b++;
+                }
+                int multi = b - ii + 1;
+
+                if (multi < degreeU)
+                {
+                    double numerator = knotsU[b] - knotsU[a];
+
+                    for (int j = degreeU; j > multi; j--)
+                    {
+                        alphaVector[j - multi - 1] = numerator / (knotsU[a + j] - knotsU[a]);
+                    }
+
+                    int r = degreeU - multi;
+                    for (int j = 1; j <= r; j++)
+                    {
+                        int save = r - j;
+                        int s = multi + j;
+
+                        for (int k = degreeU; k >= s; k--)
+                        {
+                            double alpha = alphaVector[k - s];
+                            for (int col = 0; col < columns; col++)
+                            {
+                                tempPatches[nb][k][col] = ControlPointsHelper.BlendControlPoints(
+                                    tempPatches[nb][k - 1][col],
+                                    tempPatches[nb][k][col],
+                                    alpha
+                                );
+                            }
+                        }
+
+                        if (b < m && nb + 1 < tempPatchCount)
+                        {
+                            for (int col = 0; col < columns; col++)
+                            {
+                                tempPatches[nb + 1][save][col] = tempPatches[nb][degreeU][col];
+                            }
+                        }
+                    }
+                }
+
+                nb++;
+                if (b < m && nb < tempPatchCount)
+                {
+                    for (int i = degreeU - multi; i <= degreeU; i++)
+                    {
+                        for (int col = 0; col < columns; col++)
+                        {
+                            tempPatches[nb][i][col] = controlPoints[b - degreeU + i][col];
+                        }
+                    }
+                    a = b;
+                    b++;
+                }
+            }
+
+            int tempSize = nb;
+
+            // Phase 2: Decompose each temp patch in V direction
+            int finalPatchCount = tempSize * (columns - degreeV);
+            var bezierPatches = new List<ControlPoint<Vector2>[][]>(finalPatchCount);
+
+            for (int i = 0; i < finalPatchCount; i++)
+            {
+                var patch = new ControlPoint<Vector2>[degreeU + 1][];
+                for (int j = 0; j <= degreeU; j++)
+                {
+                    patch[j] = new ControlPoint<Vector2>[degreeV + 1];
+                }
+                bezierPatches.Add(patch);
+            }
+
+            nb = 0;
+            for (int np = 0; np < tempSize; np++)
+            {
+                // Copy initial patch
+                for (int i = 0; i <= degreeU; i++)
+                {
+                    for (int j = 0; j <= degreeV; j++)
+                    {
+                        bezierPatches[nb][i][j] = tempPatches[np][i][j];
+                    }
+                }
+
+                m = columns + degreeV;
+                a = degreeV;
+                b = degreeV + 1;
+
+                while (b < m)
+                {
+                    int ii = b;
+                    while (b < m && MathUtils.IsAlmostEqualTo(knotsV[b + 1], knotsV[b]))
+                    {
+                        b++;
+                    }
+                    int multi = b - ii + 1;
+
+                    if (multi < degreeV)
+                    {
+                        double numerator = knotsV[b] - knotsV[a];
+
+                        for (int j = degreeV; j > multi; j--)
+                        {
+                            alphaVector[j - multi - 1] = numerator / (knotsV[a + j] - knotsV[a]);
+                        }
+
+                        int r = degreeV - multi;
+                        for (int j = 1; j <= r; j++)
+                        {
+                            int save = r - j;
+                            int s = multi + j;
+
+                            for (int k = degreeV; k >= s; k--)
+                            {
+                                double alpha = alphaVector[k - s];
+                                for (int row = 0; row <= degreeU; row++)
+                                {
+                                    bezierPatches[nb][row][k] =
+                                        ControlPointsHelper.BlendControlPoints(
+                                            bezierPatches[nb][row][k - 1],
+                                            bezierPatches[nb][row][k],
+                                            alpha
+                                        );
+                                }
+                            }
+
+                            if (b < m && nb + 1 < bezierPatches.Count)
+                            {
+                                for (int row = 0; row <= degreeU; row++)
+                                {
+                                    bezierPatches[nb + 1][row][save] = bezierPatches[nb][row][
+                                        degreeV
+                                    ];
+                                }
+                            }
+                        }
+                    }
+
+                    nb++;
+                    if (b < m && nb < bezierPatches.Count)
+                    {
+                        for (int i = degreeV - multi; i <= degreeV; i++)
+                        {
+                            for (int row = 0; row <= degreeU; row++)
+                            {
+                                bezierPatches[nb][row][i] = tempPatches[np][row][b - degreeV + i];
+                            }
+                        }
+                        a = b;
+                        b++;
+                    }
+                }
+            }
+
+            // Trim excess patches and convert to BezierSurface
+            var result = new List<BezierSurface<Vector2>>(nb);
+            for (int i = 0; i < nb; i++)
+            {
+                result.Add(new BezierSurface<Vector2>(degreeU, degreeV, bezierPatches[i]));
+            }
+
+            return result;
+        }
     }
 }

@@ -419,8 +419,9 @@ namespace Nurbsy
         }
 
         /// <summary>
-        /// The NURBS Book 2nd Edition Page 137, Algorithm A5.3.
-        /// Insert a knot into the surface along U or V direction.
+        /// The NURBS Book 2nd Edition Page137
+        /// Algorithm A5.3
+        /// Surface knot insertion along U or V direction.
         /// </summary>
         /// <param name="insertKnot">The knot value to insert.</param>
         /// <param name="times">Number of times to insert the knot.</param>
@@ -466,7 +467,9 @@ namespace Nurbsy
         }
 
         /// <summary>
-        /// Refine the knot vector by inserting multiple knots.
+        /// The NURBS Book 2nd Edition Page167
+        /// Algorithm A5.5
+        /// Refine surface knot vector.
         /// </summary>
         /// <param name="insertKnotElements">The knots to insert.</param>
         /// <param name="direction">The direction to refine (UDirection or VDirection).</param>
@@ -496,6 +499,36 @@ namespace Nurbsy
                     direction
                 );
                 return Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page177
+        /// Algorithm A5.7
+        /// Decompose surface into Bezier patches.
+        /// </summary>
+        public IReadOnlyList<BezierSurface<T>> DecomposeToBeziers()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.DecomposeToBeziers(in surface);
+                return Unsafe.As<
+                    IReadOnlyList<BezierSurface<Vector2>>,
+                    IReadOnlyList<BezierSurface<T>>
+                >(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.DecomposeToBeziers(in surface);
+                return Unsafe.As<
+                    IReadOnlyList<BezierSurface<Vector3>>,
+                    IReadOnlyList<BezierSurface<T>>
+                >(ref result);
             }
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");

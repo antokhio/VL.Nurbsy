@@ -369,5 +369,100 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// Swap the U and V directions of the surface.
+        /// Creates a new surface where U becomes V and V becomes U.
+        /// </summary>
+        /// <returns>A new surface with swapped U and V directions.</returns>
+        public NurbsSurface<T> SwapDim()
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.SwapDim(in surface);
+                return Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.SwapDim(in surface);
+                return Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// Reverse the surface in the specified direction.
+        /// </summary>
+        /// <param name="direction">The direction to reverse (U, V, or All).</param>
+        /// <returns>A new reversed surface.</returns>
+        public NurbsSurface<T> Reverse(SurfaceDirection direction = SurfaceDirection.All)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.Reverse(in surface, direction);
+                return Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.Reverse(in surface, direction);
+                return Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page 137, Algorithm A5.3.
+        /// Insert a knot into the surface along U or V direction.
+        /// </summary>
+        /// <param name="insertKnot">The knot value to insert.</param>
+        /// <param name="times">Number of times to insert the knot.</param>
+        /// <param name="direction">The direction to insert (UDirection or VDirection).</param>
+        /// <param name="result">The resulting surface with inserted knot.</param>
+        /// <returns>The number of times the knot was actually inserted.</returns>
+        public int InsertKnot(
+            double insertKnot,
+            int times,
+            SurfaceDirection direction,
+            out NurbsSurface<T> result
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                int inserted = NurbsSurface2DHelper.InsertKnot(
+                    in surface,
+                    insertKnot,
+                    times,
+                    direction,
+                    out var result2
+                );
+                result = Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result2);
+                return inserted;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                int inserted = NurbsSurface3DHelper.InsertKnot(
+                    in surface,
+                    insertKnot,
+                    times,
+                    direction,
+                    out var result3
+                );
+                result = Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result3);
+                return inserted;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

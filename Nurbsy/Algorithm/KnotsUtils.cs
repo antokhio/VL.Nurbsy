@@ -163,5 +163,24 @@ namespace Nurbsy.Algorithm
             }
             return true;
         }
+
+        /// <summary>
+        /// Reverse a knot vector while preserving spacing.
+        /// </summary>
+        /// <param name="knots">The original knot vector.</param>
+        /// <returns>The reversed knot vector.</returns>
+        public static IReadOnlyList<double> ReverseKnots(IReadOnlyList<double> knots)
+        {
+            int size = knots.Count;
+            var reversed = new double[size];
+            reversed[0] = knots[0];
+
+            for (int i = 1; i < size; i++)
+            {
+                reversed[i] = reversed[i - 1] + (knots[size - i] - knots[size - i - 1]);
+            }
+
+            return reversed;
+        }
     }
 }

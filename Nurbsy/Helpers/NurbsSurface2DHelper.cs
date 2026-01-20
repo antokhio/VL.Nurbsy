@@ -586,5 +586,308 @@ namespace Nurbsy.Helpers
         {
             return 0.0;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.SwapDim()"/>
+        public static NurbsSurface<Vector2> SwapDim(in NurbsSurface<Vector2> surface)
+        {
+            var controlPoints = surface.ControlPoints;
+            int countU = controlPoints.Count;
+            int countV = controlPoints[0].Count;
+
+            // Transpose control points
+            var transposedControlPoints = new ControlPoint<Vector2>[countV][];
+            for (int j = 0; j < countV; j++)
+            {
+                transposedControlPoints[j] = new ControlPoint<Vector2>[countU];
+                for (int i = 0; i < countU; i++)
+                {
+                    transposedControlPoints[j][i] = controlPoints[i][j];
+                }
+            }
+
+            return new NurbsSurface<Vector2>(
+                surface.DegreeV, // New DegreeU = old DegreeV
+                surface.DegreeU, // New DegreeV = old DegreeU
+                transposedControlPoints,
+                surface.KnotsV, // New KnotsU = old KnotsV
+                surface.KnotsU // New KnotsV = old KnotsU
+            );
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.Reverse(SurfaceDirection)"/>
+        public static NurbsSurface<Vector2> Reverse(
+            in NurbsSurface<Vector2> surface,
+            SurfaceDirection direction
+        )
+        {
+            var controlPoints = surface.ControlPoints;
+            int countU = controlPoints.Count;
+            int countV = controlPoints[0].Count;
+
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            // Reverse knot vectors as needed
+            IReadOnlyList<double> newKnotsU =
+                (direction == SurfaceDirection.All || direction == SurfaceDirection.UDirection)
+                    ? KnotsUtils.ReverseKnots(knotsU)
+                    : knotsU;
+
+            IReadOnlyList<double> newKnotsV =
+                (direction == SurfaceDirection.All || direction == SurfaceDirection.VDirection)
+                    ? KnotsUtils.ReverseKnots(knotsV)
+                    : knotsV;
+
+            // Reverse control points
+            var newControlPoints = new ControlPoint<Vector2>[countU][];
+
+            if (direction == SurfaceDirection.UDirection)
+            {
+                // Reverse each column (swap rows for each column index)
+                for (int i = 0; i < countU; i++)
+                {
+                    newControlPoints[i] = new ControlPoint<Vector2>[countV];
+                    for (int j = 0; j < countV; j++)
+                    {
+                        newControlPoints[i][j] = controlPoints[countU - 1 - i][j];
+                    }
+                }
+            }
+            else if (direction == SurfaceDirection.VDirection)
+            {
+                // Reverse each row
+                for (int i = 0; i < countU; i++)
+                {
+                    newControlPoints[i] = new ControlPoint<Vector2>[countV];
+                    for (int j = 0; j < countV; j++)
+                    {
+                        newControlPoints[i][j] = controlPoints[i][countV - 1 - j];
+                    }
+                }
+            }
+            else // All
+            {
+                // Reverse both directions
+                for (int i = 0; i < countU; i++)
+                {
+                    newControlPoints[i] = new ControlPoint<Vector2>[countV];
+                    for (int j = 0; j < countV; j++)
+                    {
+                        newControlPoints[i][j] = controlPoints[countU - 1 - i][countV - 1 - j];
+                    }
+                }
+            }
+
+            return new NurbsSurface<Vector2>(
+                surface.DegreeU,
+                surface.DegreeV,
+                newControlPoints,
+                newKnotsU,
+                newKnotsV
+            );
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.InsertKnot(double, int, SurfaceDirection, out NurbsSurface{T})"/>
+        public static int InsertKnot(
+            in NurbsSurface<Vector2> surface,
+            double insertKnot,
+            int times,
+            SurfaceDirection direction,
+            out NurbsSurface<Vector2> result
+        )
+        {
+            Validate.Argument(
+                direction == SurfaceDirection.UDirection
+                    || direction == SurfaceDirection.VDirection,
+                nameof(direction),
+                "Direction must be UDirection or VDirection."
+            );
+            Validate.Argument(times > 0, nameof(times), "Times must be greater than zero.");
+
+            bool isUDirection = direction == SurfaceDirection.UDirection;
+            int degree = isUDirection ? surface.DegreeU : surface.DegreeV;
+            var knotVector = isUDirection ? surface.KnotsU : surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            int knotSpanIndex = Polynomials.GetKnotSpanIndex(degree, knotVector, insertKnot);
+            int multiplicity = Polynomials.GetKnotMultiplicity(knotVector, insertKnot);
+
+            if (multiplicity >= degree)
+            {
+                result = surface;
+                return 0;
+            }
+
+            if (times + multiplicity > degree)
+            {
+                times = degree - multiplicity;
+            }
+
+            if (times <= 0)
+            {
+                result = surface;
+                return 0;
+            }
+
+            // Build new knot vector
+            var insertedKnotVector = new double[knotVector.Count + times];
+            for (int i = 0; i <= knotSpanIndex; i++)
+            {
+                insertedKnotVector[i] = knotVector[i];
+            }
+            for (int i = 1; i <= times; i++)
+            {
+                insertedKnotVector[knotSpanIndex + i] = insertKnot;
+            }
+            for (int i = knotSpanIndex + 1; i < knotVector.Count; i++)
+            {
+                insertedKnotVector[i + times] = knotVector[i];
+            }
+
+            // Compute alpha coefficients
+            var alpha = new double[degree - multiplicity][];
+            for (int i = 0; i < degree - multiplicity; i++)
+            {
+                alpha[i] = new double[times + 1];
+            }
+
+            for (int j = 1; j <= times; j++)
+            {
+                int L = knotSpanIndex - degree + j;
+                for (int i = 0; i <= degree - j - multiplicity; i++)
+                {
+                    alpha[i][j] =
+                        (insertKnot - knotVector[L + i])
+                        / (knotVector[i + knotSpanIndex + 1] - knotVector[L + i]);
+                }
+            }
+
+            var temp = new ControlPoint<Vector2>[degree + 1];
+            int rows = controlPoints.Count;
+            int columns = controlPoints[0].Count;
+
+            if (isUDirection)
+            {
+                var updatedControlPoints = new ControlPoint<Vector2>[rows + times][];
+                for (int i = 0; i < rows + times; i++)
+                {
+                    updatedControlPoints[i] = new ControlPoint<Vector2>[columns];
+                }
+
+                for (int col = 0; col < columns; col++)
+                {
+                    // Copy unaffected control points
+                    for (int i = 0; i <= knotSpanIndex - degree; i++)
+                    {
+                        updatedControlPoints[i][col] = controlPoints[i][col];
+                    }
+                    for (int i = knotSpanIndex - multiplicity; i < rows; i++)
+                    {
+                        updatedControlPoints[i + times][col] = controlPoints[i][col];
+                    }
+
+                    // Load affected control points into temp
+                    for (int i = 0; i < degree - multiplicity + 1; i++)
+                    {
+                        temp[i] = controlPoints[knotSpanIndex - degree + i][col];
+                    }
+
+                    // Insert knot
+                    int L = 0;
+                    for (int j = 1; j <= times; j++)
+                    {
+                        L = knotSpanIndex - degree + j;
+                        for (int i = 0; i <= degree - j - multiplicity; i++)
+                        {
+                            double a = alpha[i][j];
+                            temp[i] = ControlPointsHelper.BlendControlPoints(
+                                temp[i],
+                                temp[i + 1],
+                                a
+                            );
+                        }
+                        updatedControlPoints[L][col] = temp[0];
+                        updatedControlPoints[knotSpanIndex + times - j - multiplicity][col] = temp[
+                            degree - j - multiplicity
+                        ];
+                    }
+
+                    for (int i = L + 1; i < knotSpanIndex - multiplicity; i++)
+                    {
+                        updatedControlPoints[i][col] = temp[i - L];
+                    }
+                }
+
+                result = new NurbsSurface<Vector2>(
+                    surface.DegreeU,
+                    surface.DegreeV,
+                    updatedControlPoints,
+                    insertedKnotVector,
+                    surface.KnotsV
+                );
+            }
+            else
+            {
+                var updatedControlPoints = new ControlPoint<Vector2>[rows][];
+                for (int i = 0; i < rows; i++)
+                {
+                    updatedControlPoints[i] = new ControlPoint<Vector2>[columns + times];
+                }
+
+                for (int row = 0; row < rows; row++)
+                {
+                    // Copy unaffected control points
+                    for (int i = 0; i <= knotSpanIndex - degree; i++)
+                    {
+                        updatedControlPoints[row][i] = controlPoints[row][i];
+                    }
+                    for (int i = knotSpanIndex - multiplicity; i < columns; i++)
+                    {
+                        updatedControlPoints[row][i + times] = controlPoints[row][i];
+                    }
+
+                    // Load affected control points into temp
+                    for (int i = 0; i < degree - multiplicity + 1; i++)
+                    {
+                        temp[i] = controlPoints[row][knotSpanIndex - degree + i];
+                    }
+
+                    // Insert knot
+                    int L = 0;
+                    for (int j = 1; j <= times; j++)
+                    {
+                        L = knotSpanIndex - degree + j;
+                        for (int i = 0; i <= degree - j - multiplicity; i++)
+                        {
+                            double a = alpha[i][j];
+                            temp[i] = ControlPointsHelper.BlendControlPoints(
+                                temp[i],
+                                temp[i + 1],
+                                a
+                            );
+                        }
+                        updatedControlPoints[row][L] = temp[0];
+                        updatedControlPoints[row][knotSpanIndex + times - j - multiplicity] = temp[
+                            degree - j - multiplicity
+                        ];
+                    }
+
+                    for (int i = L + 1; i < knotSpanIndex - multiplicity; i++)
+                    {
+                        updatedControlPoints[row][i] = temp[i - L];
+                    }
+                }
+
+                result = new NurbsSurface<Vector2>(
+                    surface.DegreeU,
+                    surface.DegreeV,
+                    updatedControlPoints,
+                    surface.KnotsU,
+                    insertedKnotVector
+                );
+            }
+
+            return times;
+        }
     }
 }

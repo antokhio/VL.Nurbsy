@@ -687,29 +687,33 @@ namespace Nurbsy
         }
 
         /// <summary>
-        /// Check if the surface is closed in the specified direction.
-        /// A surface is closed in a direction if all iso-curves in that direction are closed.
-        ///  [0][0]  [0][1] ... ...  [0][m]     ------- v direction
-        ///  [1][0]  [1][1] ... ...  [1][m]    |
-        ///    .                               |
-        ///    .                               u direction
-        ///    .
-        ///  [n][0]  [n][1] ... ...  [n][m]
+        /// Reparametrize the surface to a new parameter domain.
+        /// The geometric shape remains unchanged, only the parameter values are rescaled.
         /// </summary>
-        /// <param name="direction">The direction to check (UDirection or VDirection).</param>
-        /// <returns>True if the surface is closed in the specified direction.</returns>
-        public bool IsClosed(SurfaceDirection direction)
+        /// <param name="minU">New minimum U parameter.</param>
+        /// <param name="maxU">New maximum U parameter.</param>
+        /// <param name="minV">New minimum V parameter.</param>
+        /// <param name="maxV">New maximum V parameter.</param>
+        /// <returns>A new surface with rescaled parameter domain.</returns>
+        public NurbsSurface<T> Reparametrize(
+            float minU = 0f,
+            float maxU = 1f,
+            float minV = 0f,
+            float maxV = 1f
+        )
         {
             if (typeof(T) == typeof(Vector2))
             {
                 ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
-                return NurbsSurface2DHelper.IsClosed(in surface, direction);
+                var result = NurbsSurface2DHelper.Reparametrize(in surface, minU, maxU, minV, maxV);
+                return Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result);
             }
 
             if (typeof(T) == typeof(Vector3))
             {
                 ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
-                return NurbsSurface3DHelper.IsClosed(in surface, direction);
+                var result = NurbsSurface3DHelper.Reparametrize(in surface, minU, maxU, minV, maxV);
+                return Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result);
             }
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
@@ -799,6 +803,64 @@ namespace Nurbsy
                     maxIterations,
                     tolerance
                 );
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page235
+        /// Surface Tangent Vector Inversion: finding the corresponding UV tangent [du dv] make T = Su*du+Sv*dv.
+        /// Compute the UV tangent direction corresponding to a given tangent vector.
+        /// Projects the tangent onto the surface's parameter space using the first fundamental form.
+        /// </summary>
+        /// <param name="param">The UV parameter on the surface.</param>
+        /// <param name="tangent">The tangent vector in world space.</param>
+        /// <param name="uvTangent">Output: The corresponding UV tangent direction.</param>
+        /// <returns>True if the UV tangent was computed successfully, false if degenerate.</returns>
+        public bool TryGetUVTangent(Vector2 param, T tangent, out Vector2 uvTangent)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var tan = Unsafe.As<T, Vector2>(ref tangent);
+                return NurbsSurface2DHelper.GetUVTangent(in surface, param, tan, out uvTangent);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var tan = Unsafe.As<T, Vector3>(ref tangent);
+                return NurbsSurface3DHelper.GetUVTangent(in surface, param, tan, out uvTangent);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// Check if the surface is closed in the specified direction.
+        /// A surface is closed in a direction if all iso-curves in that direction are closed.
+        ///  [0][0]  [0][1] ... ...  [0][m]     ------- v direction
+        ///  [1][0]  [1][1] ... ...  [1][m]    |
+        ///    .                               |
+        ///    .                               u direction
+        ///    .
+        ///  [n][0]  [n][1] ... ...  [n][m]
+        /// </summary>
+        /// <param name="direction">The direction to check (UDirection or VDirection).</param>
+        /// <returns>True if the surface is closed in the specified direction.</returns>
+        public bool IsClosed(SurfaceDirection direction)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                return NurbsSurface2DHelper.IsClosed(in surface, direction);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                return NurbsSurface3DHelper.IsClosed(in surface, direction);
             }
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");

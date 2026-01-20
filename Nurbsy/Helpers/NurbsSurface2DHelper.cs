@@ -1759,6 +1759,43 @@ namespace Nurbsy.Helpers
             return param;
         }
 
+        /// <inheritdoc cref="NurbsSurface{T}.Reparametrize(double, double, double, double)"/>
+        public static NurbsSurface<Vector2> Reparametrize(
+            in NurbsSurface<Vector2> surface,
+            double minU,
+            double maxU,
+            double minV,
+            double maxV
+        )
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            // Check if already in the target domain
+            bool uSame =
+                MathUtils.IsAlmostEqualTo(minU, knotsU[0])
+                && MathUtils.IsAlmostEqualTo(maxU, knotsU[^1]);
+            bool vSame =
+                MathUtils.IsAlmostEqualTo(minV, knotsV[0])
+                && MathUtils.IsAlmostEqualTo(maxV, knotsV[^1]);
+
+            if (uSame && vSame)
+            {
+                return surface;
+            }
+
+            var newKnotsU = uSame ? knotsU : KnotsUtils.Rescale(knotsU, minU, maxU);
+            var newKnotsV = vSame ? knotsV : KnotsUtils.Rescale(knotsV, minV, maxV);
+
+            return new NurbsSurface<Vector2>(
+                surface.DegreeU,
+                surface.DegreeV,
+                surface.ControlPoints,
+                newKnotsU,
+                newKnotsV
+            );
+        }
+
         /// <inheritdoc cref="NurbsSurface{T}.GetParamOnSurfaceByGSA(T, int, double)"/>
         /// <remarks>Optimized for 2d</remarks>
         public static Vector2 GetParamOnSurfaceByGSA(
@@ -1828,6 +1865,44 @@ namespace Nurbsy.Helpers
             }
 
             return new Vector2((float)u0, (float)v0);
+        }
+
+        public static bool GetUVTangent(
+            in NurbsSurface<Vector2> surface,
+            Vector2 param,
+            Vector2 tangent,
+            out Vector2 uvTangent
+        )
+        {
+            uvTangent = Vector2.Zero;
+
+            var derivatives = ComputeRationalSurfaceDerivatives(in surface, 1, param);
+            var Su = derivatives[1][0];
+            var Sv = derivatives[0][1];
+
+            // First fundamental form coefficients
+            double a = Vector2.Dot(Su, Su); // E
+            double b = Vector2.Dot(Su, Sv); // F
+            double c = Vector2.Dot(Su, Sv); // F (same as b)
+            double d = Vector2.Dot(Sv, Sv); // G
+
+            // Project tangent onto surface derivatives
+            double e = Vector2.Dot(Su, tangent);
+            double f = Vector2.Dot(Sv, tangent);
+
+            // Check for degeneracy (singular metric)
+            double det = a * d - b * c;
+            if (MathUtils.IsZero(det))
+            {
+                return false;
+            }
+
+            // Solve 2x2 system: [a b; c d] * [u; v] = [e; f]
+            double u = (e * d - b * f) / det;
+            double v = (a * f - e * c) / det;
+
+            uvTangent = new Vector2((float)u, (float)v);
+            return true;
         }
 
         /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>

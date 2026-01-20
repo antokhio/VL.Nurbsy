@@ -570,5 +570,94 @@ namespace Nurbsy.Helpers
             Sv = (Aders[0, 1] - (float)wders[0, 1] * S) * (float)invW;
             Su = (Aders[1, 0] - (float)wders[1, 0] * S) * (float)invW;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetNormal(Vector2)"/>
+        public static Vector3 ComputeNormal(in NurbsSurface<Vector3> surface, Vector2 uv)
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            Validate.Range(uv.X, knotsU[0], knotsU[knotsU.Count - 1], nameof(uv.X));
+            Validate.Range(uv.Y, knotsV[0], knotsV[knotsV.Count - 1], nameof(uv.Y));
+
+            var derivatives = ComputeRationalSurfaceDerivatives(in surface, 1, uv);
+            var Su = derivatives[1][0];
+            var Sv = derivatives[0][1];
+
+            // Normalize Su, then cross with Sv, then normalize result
+            var SuLength = Su.Length();
+            if (!MathUtils.IsZero(SuLength))
+            {
+                Su /= SuLength;
+            }
+
+            var normal = Vector3.Cross(Su, Sv);
+            var normalLength = normal.Length();
+
+            return MathUtils.IsZero(normalLength) ? Vector3.Zero : normal / normalLength;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetCurvature(SurfaceCurvature, Vector2)"/>
+        public static double ComputeCurvature(
+            in NurbsSurface<Vector3> surface,
+            SurfaceCurvature curvature,
+            Vector2 uv
+        )
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+
+            Validate.Range(uv.X, knotsU[0], knotsU[knotsU.Count - 1], nameof(uv.X));
+            Validate.Range(uv.Y, knotsV[0], knotsV[knotsV.Count - 1], nameof(uv.Y));
+
+            // Get second-order rational derivatives
+            var ders = ComputeRationalSurfaceDerivatives(in surface, 2, uv);
+
+            var Su = ders[1][0]; // ∂S/∂u
+            var Sv = ders[0][1]; // ∂S/∂v
+            var Suu = ders[2][0]; // ∂²S/∂u²
+            var Svv = ders[0][2]; // ∂²S/∂v²
+            var Suv = ders[1][1]; // ∂²S/∂u∂v
+
+            // Compute surface normal
+            var normal = ComputeNormal(in surface, uv);
+
+            // Second fundamental form coefficients
+            double L = Vector3.Dot(Suu, normal);
+            double M = Vector3.Dot(Suv, normal);
+            double N = Vector3.Dot(Svv, normal);
+
+            // First fundamental form coefficients
+            double E = Vector3.Dot(Su, Su);
+            double F = Vector3.Dot(Su, Sv);
+            double G = Vector3.Dot(Sv, Sv);
+
+            double denominator = E * G - F * F;
+            if (MathUtils.IsZero(denominator))
+            {
+                return 0.0;
+            }
+
+            // Gaussian curvature
+            double K = (L * N - M * M) / denominator;
+            // Mean curvature
+            double H = (E * N + G * L - 2 * F * M) / (2 * denominator);
+            // Principal curvatures
+            double discriminant = Math.Abs(H * H - K);
+            double sqrtDisc = Math.Sqrt(discriminant);
+            double k1 = H + sqrtDisc;
+            double k2 = H - sqrtDisc;
+
+            return curvature switch
+            {
+                SurfaceCurvature.Gauss => K,
+                SurfaceCurvature.Mean => H,
+                SurfaceCurvature.Maximum => k1,
+                SurfaceCurvature.Minimum => k2,
+                SurfaceCurvature.Abs => Math.Abs(k1) + Math.Abs(k2),
+                SurfaceCurvature.Rms => Math.Sqrt(k1 * k1 + k2 * k2),
+                _ => 0.0,
+            };
+        }
     }
 }

@@ -570,5 +570,21 @@ namespace Nurbsy.Helpers
             Sv = (Aders[0, 1] - (float)wders[0, 1] * S) * (float)invW;
             Su = (Aders[1, 0] - (float)wders[1, 0] * S) * (float)invW;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetNormal(Vector2)"/>
+        public static Vector2 ComputeNormal(in NurbsSurface<Vector2> surface, Vector2 uv)
+        {
+            return Vector2.Zero;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetCurvature(SurfaceCurvature, Vector2)"/>
+        public static double ComputeCurvature(
+            in NurbsSurface<Vector2> surface,
+            SurfaceCurvature curvature,
+            Vector2 uv
+        )
+        {
+            return 0.0;
+        }
     }
 }

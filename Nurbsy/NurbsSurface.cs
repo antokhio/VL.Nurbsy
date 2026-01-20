@@ -320,5 +320,54 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// Compute surface normal at the given UV parameter.
+        /// For 2D surfaces, returns zero vector.
+        /// </summary>
+        /// <param name="uv">The UV parameter.</param>
+        /// <returns>The normalized surface normal vector.</returns>
+        public T GetNormal(Vector2 uv)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.ComputeNormal(in surface, uv);
+                return Unsafe.As<Vector2, T>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.ComputeNormal(in surface, uv);
+                return Unsafe.As<Vector3, T>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// Compute surface curvature at the given UV parameter.
+        /// For 2D surfaces, returns 0.
+        /// </summary>
+        /// <param name="curvature">The type of curvature to compute.</param>
+        /// <param name="uv">The UV parameter.</param>
+        /// <returns>The curvature value.</returns>
+        public double GetCurvature(SurfaceCurvature curvature, Vector2 uv)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                return NurbsSurface2DHelper.ComputeCurvature(in surface, curvature, uv);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                return NurbsSurface3DHelper.ComputeCurvature(in surface, curvature, uv);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

@@ -28,14 +28,28 @@
         VDirection = 2,
     }
 
+    /// <summary>
+    /// Types of surface curvature.
+    /// </summary>
     public enum SurfaceCurvature
     {
-        Maximum = 0,
-        Minimum = 1,
-        Gauss = 2,
-        Mean = 3,
-        Abs = 4,
-        Rms = 5,
+        /// <summary>Gaussian curvature (K = k1 * k2)</summary>
+        Gauss,
+
+        /// <summary>Mean curvature (H = (k1 + k2) / 2)</summary>
+        Mean,
+
+        /// <summary>Maximum principal curvature (k1)</summary>
+        Maximum,
+
+        /// <summary>Minimum principal curvature (k2)</summary>
+        Minimum,
+
+        /// <summary>Absolute curvature (|k1| + |k2|)</summary>
+        Abs,
+
+        /// <summary>Root mean square curvature (sqrt(k1² + k2²))</summary>
+        Rms,
     }
 
     public enum IntegratorType

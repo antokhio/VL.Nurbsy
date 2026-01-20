@@ -375,5 +375,129 @@ namespace Nurbsy.Helpers
 
             return SKL;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetRationalDerivatives(int, Vector2)"/>
+        public static Vector3[][] ComputeRationalSurfaceDerivatives(
+            in NurbsSurface<Vector3> surface,
+            int derivative,
+            Vector2 uv
+        )
+        {
+            var degreeU = surface.DegreeU;
+            var degreeV = surface.DegreeV;
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            Validate.Argument(
+                derivative > 0,
+                nameof(derivative),
+                "Derivative must be greater than zero."
+            );
+            Validate.Range(uv.X, knotsU[0], knotsU[knotsU.Count - 1], nameof(uv.X));
+            Validate.Range(uv.Y, knotsV[0], knotsV[knotsV.Count - 1], nameof(uv.Y));
+
+            // Compute B-spline derivatives with separate weight tracking
+            int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, uv.X);
+            double[][] Nu = Polynomials.BasisFunctionsDerivatives(
+                uSpanIndex,
+                degreeU,
+                derivative,
+                knotsU,
+                uv.X
+            );
+
+            int vSpanIndex = Polynomials.GetKnotSpanIndex(degreeV, knotsV, uv.Y);
+            double[][] Nv = Polynomials.BasisFunctionsDerivatives(
+                vSpanIndex,
+                degreeV,
+                derivative,
+                knotsV,
+                uv.Y
+            );
+
+            int du = Math.Min(derivative, degreeU);
+            int dv = Math.Min(derivative, degreeV);
+
+            // Compute Aders (weighted position) and wders (weight) derivatives
+            var Aders = new Vector3[derivative + 1][];
+            var wders = new double[derivative + 1][];
+            for (int i = 0; i <= derivative; i++)
+            {
+                Aders[i] = new Vector3[derivative + 1];
+                wders[i] = new double[derivative + 1];
+            }
+
+            var tempA = new Vector3[degreeV + 1];
+            var tempW = new double[degreeV + 1];
+
+            for (int k = 0; k <= du; k++)
+            {
+                for (int s = 0; s <= degreeV; s++)
+                {
+                    tempA[s] = Vector3.Zero;
+                    tempW[s] = 0.0;
+                    for (int r = 0; r <= degreeU; r++)
+                    {
+                        var cp = controlPoints[uSpanIndex - degreeU + r][vSpanIndex - degreeV + s];
+                        double wBasis = cp.Weight * Nu[k][r];
+                        tempA[s] += cp.Value * (float)wBasis;
+                        tempW[s] += wBasis;
+                    }
+                }
+
+                int dd = Math.Min(derivative - k, dv);
+                for (int l = 0; l <= dd; l++)
+                {
+                    for (int s = 0; s <= degreeV; s++)
+                    {
+                        Aders[k][l] += tempA[s] * (float)Nv[l][s];
+                        wders[k][l] += tempW[s] * Nv[l][s];
+                    }
+                }
+            }
+
+            // Apply quotient rule for rational derivatives
+            var derivatives = new Vector3[derivative + 1][];
+            for (int i = 0; i <= derivative; i++)
+            {
+                derivatives[i] = new Vector3[derivative + 1];
+            }
+
+            for (int k = 0; k <= derivative; k++)
+            {
+                for (int l = 0; l <= derivative - k; l++)
+                {
+                    var v = Aders[k][l];
+
+                    for (int j = 1; j <= l; j++)
+                    {
+                        v -=
+                            (float)(MathUtils.Binomial(l, j) * wders[0][j]) * derivatives[k][l - j];
+                    }
+
+                    for (int i = 1; i <= k; i++)
+                    {
+                        v -=
+                            (float)(MathUtils.Binomial(k, i) * wders[i][0]) * derivatives[k - i][l];
+
+                        var v2 = Vector3.Zero;
+                        for (int j = 1; j <= l; j++)
+                        {
+                            v2 +=
+                                (float)(MathUtils.Binomial(l, j) * wders[i][j])
+                                * derivatives[k - i][l - j];
+                        }
+                        v -= (float)MathUtils.Binomial(k, i) * v2;
+                    }
+
+                    derivatives[k][l] = MathUtils.IsZero(wders[0][0])
+                        ? Vector3.Zero
+                        : v / (float)wders[0][0];
+                }
+            }
+
+            return derivatives;
+        }
     }
 }

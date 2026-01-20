@@ -464,5 +464,41 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// Refine the knot vector by inserting multiple knots.
+        /// </summary>
+        /// <param name="insertKnotElements">The knots to insert.</param>
+        /// <param name="direction">The direction to refine (UDirection or VDirection).</param>
+        /// <returns>A new surface with refined knot vector.</returns>
+        public NurbsSurface<T> RefineKnotVector(
+            IReadOnlyList<double> insertKnotElements,
+            SurfaceDirection direction
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.RefineKnotVector(
+                    in surface,
+                    insertKnotElements,
+                    direction
+                );
+                return Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.RefineKnotVector(
+                    in surface,
+                    insertKnotElements,
+                    direction
+                );
+                return Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

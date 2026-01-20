@@ -889,5 +889,100 @@ namespace Nurbsy.Helpers
 
             return times;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.RefineKnotVector(IReadOnlyList{double}, SurfaceDirection)"/>
+        public static NurbsSurface<Vector2> RefineKnotVector(
+            in NurbsSurface<Vector2> surface,
+            IReadOnlyList<double> insertKnotElements,
+            SurfaceDirection direction
+        )
+        {
+            Validate.Argument(
+                direction == SurfaceDirection.UDirection
+                    || direction == SurfaceDirection.VDirection,
+                nameof(direction),
+                "Direction must be UDirection or VDirection."
+            );
+            Validate.Argument(
+                insertKnotElements != null && insertKnotElements.Count > 0,
+                nameof(insertKnotElements),
+                "insertKnotElements size must be greater than zero."
+            );
+
+            var controlPoints = surface.ControlPoints;
+            bool isUDirection = direction == SurfaceDirection.UDirection;
+
+            if (isUDirection)
+            {
+                // Transpose, refine each row, transpose back
+                var transposed = ControlPointsHelper.Transpose(controlPoints);
+                var tempControlPoints = new List<ControlPoint<Vector2>[]>();
+                IReadOnlyList<double> newKnotsU = null;
+
+                for (int i = 0; i < transposed.Count; i++)
+                {
+                    var curve = new NurbsCurve<Vector2>(
+                        surface.DegreeU,
+                        transposed[i],
+                        surface.KnotsU
+                    );
+                    var refined = NurbsCurve2DHelper.RefineKnotVector(curve, insertKnotElements);
+
+                    var cpArray = new ControlPoint<Vector2>[refined.ControlPoints.Count];
+                    for (int j = 0; j < refined.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = refined.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsU = refined.Knots;
+                }
+
+                // Convert to array and transpose back
+                var tempArray = tempControlPoints.ToArray();
+                var updatedControlPoints = ControlPointsHelper.Transpose(tempArray);
+
+                return new NurbsSurface<Vector2>(
+                    surface.DegreeU,
+                    surface.DegreeV,
+                    updatedControlPoints,
+                    newKnotsU,
+                    surface.KnotsV
+                );
+            }
+            else
+            {
+                // Refine each row directly
+                var tempControlPoints = new List<ControlPoint<Vector2>[]>();
+                IReadOnlyList<double> newKnotsV = null;
+
+                for (int i = 0; i < controlPoints.Count; i++)
+                {
+                    var rowCPs = new ControlPoint<Vector2>[controlPoints[i].Count];
+                    for (int j = 0; j < controlPoints[i].Count; j++)
+                    {
+                        rowCPs[j] = controlPoints[i][j];
+                    }
+
+                    var curve = new NurbsCurve<Vector2>(surface.DegreeV, rowCPs, surface.KnotsV);
+                    var refined = NurbsCurve2DHelper.RefineKnotVector(curve, insertKnotElements);
+
+                    var cpArray = new ControlPoint<Vector2>[refined.ControlPoints.Count];
+                    for (int j = 0; j < refined.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = refined.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsV = refined.Knots;
+                }
+
+                return new NurbsSurface<Vector2>(
+                    surface.DegreeU,
+                    surface.DegreeV,
+                    tempControlPoints.ToArray(),
+                    surface.KnotsU,
+                    newKnotsV
+                );
+            }
+        }
     }
 }

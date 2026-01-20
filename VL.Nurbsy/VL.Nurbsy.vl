@@ -2,208 +2,7 @@
 <Document xmlns:p="property" xmlns:r="reflection" Id="MiFPRGI8TWHMgqdOIYFW3c" LanguageVersion="2025.7.1-0137-g9913e5c752" Version="0.128">
   <NugetDependency Id="MSXz2hJYrHzLsTOL7OiBJL" Location="VL.CoreLib" Version="2025.7.1-0137-g9913e5c752" />
   <Patch Id="EldDnOP01bTQDcdHMxNOn1">
-    <Canvas Id="IGn7mSJO0OuQVAdraH7sSd" DefaultCategory="Nurbsy" CanvasType="FullCategory">
-      <!--
-
-    ************************ BezierCurve ************************
-
--->
-      <Node Name="BezierCurve" Bounds="250,254" Id="BbF2I0NiKLxMszRdgPYbqM">
-        <p:NodeReference>
-          <Choice Kind="ForwardDefinition" Name="Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="BezierCurve`1" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="VzgHdCjefQzM6XX0gwhwp9">
-          <Canvas Id="HEeRlqVU7VQMC4BpiPau5u" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="JePiuqEkTnvOunr2pA97fS" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ ControlPoint ************************
-
--->
-      <Node Name="ControlPoint" Bounds="530,254" Id="Gdmc93ufvRjN2RC2xgvK6P">
-        <p:NodeReference>
-          <Choice Kind="ForwardDefinition" Name="Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="ControlPoint`1" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="HLi52o3rhLGLpG64h1L5Da">
-          <Canvas Id="U2gZTKUwucCO0QmQRvkuGP" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="PtS32roEEuWPAofRdXrgG8" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ CurveCurveIntersectionType ************************
-
--->
-      <Node Name="CurveCurveIntersectionType" Bounds="810,254" Id="MK8TmMszUBKPN3KmpkIboJ">
-        <p:NodeReference>
-          <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="CurveCurveIntersectionType" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="BXHueafPYA3QTI9fkLwJ79">
-          <Canvas Id="RdpYdzUjgTqPixlAQC1yTD" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="J8uqw7qRDWuMcK06jqkiR3" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ CurveNormal ************************
-
--->
-      <Node Name="CurveNormal" Bounds="250,304" Id="AstnFj7IOZ3NPh94WME1UX">
-        <p:NodeReference>
-          <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="CurveNormal" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="I0XPjLIU8jaMyEmtrNWkx0">
-          <Canvas Id="IHS8OObJK93LwJ1eA3phcK" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="Hk06NrQUhCEOGD6CynVfrF" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ IntegratorType ************************
-
--->
-      <Node Name="IntegratorType" Bounds="530,304" Id="B3rYCc2atQdLJDXFfYcj0J">
-        <p:NodeReference>
-          <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="IntegratorType" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="KtsomKlMHtZMwWj4zPgU0s">
-          <Canvas Id="DXjiqh6kZ57M4NcT1EBQy0" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="GlxFF3NKM8tN4OCsbWNAVR" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ LinePlaneIntersectionType ************************
-
--->
-      <Node Name="LinePlaneIntersectionType" Bounds="810,304" Id="Hb07w4oJCjGPK2Dj9qrknj">
-        <p:NodeReference>
-          <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="LinePlaneIntersectionType" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="EEQX4nJXDXvPpqVc2QxRn9">
-          <Canvas Id="LHoSIpayCNrPgbiKDfLKG5" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="KlcLXtbeHgTMZvmGrIKAMM" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ NurbsCurve ************************
-
--->
-      <Node Name="NurbsCurve" Bounds="250,354" Id="Ujgn2GNoNZ8QYFdi5v8SrV">
-        <p:NodeReference>
-          <Choice Kind="ForwardDefinition" Name="Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="NurbsCurve`1" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="ODGmfz53rzPN09OmzSAfl4">
-          <Canvas Id="SJD9bcDjo5BM7QuMQXHrxy" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="GOJsmCyd3tSOxgZyvBN2Rj" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ SurfaceCurvature ************************
-
--->
-      <Node Name="SurfaceCurvature" Bounds="530,354" Id="NysXdSymarBNclMHdXqOlA">
-        <p:NodeReference>
-          <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="SurfaceCurvature" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="FpT7uOAkboNPbAVPDsPXOn">
-          <Canvas Id="AIX3R3FQIKFLpk5FdhqzQF" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="MdAl7kOGA9SO9d3eFLF6mA" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ SurfaceDirection ************************
-
--->
-      <Node Name="SurfaceDirection" Bounds="810,354" Id="TehxbnxuQtpPMEGMNeZ4TA">
-        <p:NodeReference>
-          <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="SurfaceDirection" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="H7pyHW7QdPIPq8fVLAsJoN">
-          <Canvas Id="TYOYJhegHVVOWkw4UPm2Qz" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="HfrIy8HabmANBCsRU7eUUE" IsHidden="true" />
-        </Patch>
-      </Node>
-      <!--
-
-    ************************ Validate ************************
-
--->
-      <Node Name="Validate" Bounds="250,404" Id="Tr8mxlY9wmUNkas17ULF1w">
-        <p:NodeReference>
-          <Choice Kind="ForwardDefinition" Name="Forward" />
-          <CategoryReference Kind="Category" Name="Primitive" />
-        </p:NodeReference>
-        <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
-          <Choice Kind="TypeFlag" Name="Validate" />
-          <FullNameCategoryReference ID="Nurbsy" />
-          <AssemblyReference ID="Nurbsy.dll" />
-        </p:TypeAnnotation>
-        <Patch Id="JmKwgG6UvmbMuUFXg4Tw5O">
-          <Canvas Id="PpiRvI0B0hDNChDIdFJN4i" BordersChecked="false" CanvasType="Group" />
-          <ProcessDefinition Id="TlCAIFWgPmcMUNorrKLk4z" IsHidden="true" />
-        </Patch>
-      </Node>
-    </Canvas>
+    <Canvas Id="IGn7mSJO0OuQVAdraH7sSd" DefaultCategory="Nurbsy" CanvasType="FullCategory" />
     <!--
 
     ************************ Application ************************
@@ -215,7 +14,88 @@
         <CategoryReference Kind="Category" Name="Primitive" />
       </p:NodeReference>
       <Patch Id="SpEZQ0QokpLMh6z72otPP3">
-        <Canvas Id="UqEv9ueJLnYNLtLCLasSxu" CanvasType="Group" />
+        <Canvas Id="UqEv9ueJLnYNLtLCLasSxu" CanvasType="Group">
+          <!--
+
+    ************************ BezierCurve ************************
+
+-->
+          <Node Name="BezierCurve" Bounds="173,322" Id="ES9awM0zTonQTGjfEDu4aL">
+            <p:NodeReference>
+              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <CategoryReference Kind="Category" Name="Primitive" />
+            </p:NodeReference>
+            <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
+              <Choice Kind="TypeFlag" Name="BezierCurve`1" />
+              <FullNameCategoryReference ID="Nurbsy" />
+              <AssemblyReference ID="Nurbsy.dll" />
+            </p:TypeAnnotation>
+            <Patch Id="ARtAQ5Rip0oM2RSCLIs1L3">
+              <Canvas Id="TizO3muWkzxP3SsF5IaFCi" BordersChecked="false" CanvasType="Group" />
+              <ProcessDefinition Id="DHBWome9OgSMa5jKmMYWLp" IsHidden="true" />
+            </Patch>
+          </Node>
+          <!--
+
+    ************************ BezierSurface ************************
+
+-->
+          <Node Name="BezierSurface" Bounds="453,322" Id="KwAlhXMhm2KL4rS5aXC8e4">
+            <p:NodeReference>
+              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <CategoryReference Kind="Category" Name="Primitive" />
+            </p:NodeReference>
+            <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
+              <Choice Kind="TypeFlag" Name="BezierSurface`1" />
+              <FullNameCategoryReference ID="Nurbsy" />
+              <AssemblyReference ID="Nurbsy.dll" />
+            </p:TypeAnnotation>
+            <Patch Id="ODMDRt40ENSMlzmPoiX4y7">
+              <Canvas Id="HDUqQ9Fwrm0NDprlUBumya" BordersChecked="false" CanvasType="Group" />
+              <ProcessDefinition Id="Mlg5TmPjW4MPlQke1BFpIC" IsHidden="true" />
+            </Patch>
+          </Node>
+          <!--
+
+    ************************ ControlPoint ************************
+
+-->
+          <Node Name="ControlPoint" Bounds="173,372" Id="DiuKXuqAoAGL8FxxajPuRX">
+            <p:NodeReference>
+              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <CategoryReference Kind="Category" Name="Primitive" />
+            </p:NodeReference>
+            <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
+              <Choice Kind="TypeFlag" Name="ControlPoint`1" />
+              <FullNameCategoryReference ID="Nurbsy" />
+              <AssemblyReference ID="Nurbsy.dll" />
+            </p:TypeAnnotation>
+            <Patch Id="V4QUt1up4FAPTVVYvYyCBu">
+              <Canvas Id="FTMH6mNlShWOixCHM1ZlqP" BordersChecked="false" CanvasType="Group" />
+              <ProcessDefinition Id="O2FoG6jOFVkNkK0QlAUJ8G" IsHidden="true" />
+            </Patch>
+          </Node>
+          <!--
+
+    ************************ NurbsCurve ************************
+
+-->
+          <Node Name="NurbsCurve" Bounds="453,372" Id="DaibN0fypQdPukV2BIwIbl">
+            <p:NodeReference>
+              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <CategoryReference Kind="Category" Name="Primitive" />
+            </p:NodeReference>
+            <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
+              <Choice Kind="TypeFlag" Name="NurbsCurve`1" />
+              <FullNameCategoryReference ID="Nurbsy" />
+              <AssemblyReference ID="Nurbsy.dll" />
+            </p:TypeAnnotation>
+            <Patch Id="FUX9JJiprpzOz8KU9kENeY">
+              <Canvas Id="PbLgLblcaxqP8OD4vpNFSs" BordersChecked="false" CanvasType="Group" />
+              <ProcessDefinition Id="FjSWHJows1dPge0Ug66dw7" IsHidden="true" />
+            </Patch>
+          </Node>
+        </Canvas>
         <Patch Id="GGpVuQLHdzDNCyrlIBsGSa" Name="Create" />
         <Patch Id="CBQNFPJxaUgPkyDp5DfhkV" Name="Update" />
         <ProcessDefinition Id="RFs7ftjGWRzP0En5SK9D0I">

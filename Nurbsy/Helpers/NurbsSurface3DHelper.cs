@@ -397,7 +397,10 @@ namespace Nurbsy.Helpers
             Validate.Range(uv.X, knotsU[0], knotsU[knotsU.Count - 1], nameof(uv.X));
             Validate.Range(uv.Y, knotsV[0], knotsV[knotsV.Count - 1], nameof(uv.Y));
 
-            // Compute B-spline derivatives with separate weight tracking
+            // Aders = weighted position derivatives (reuse existing ComputeDerivatives)
+            var Aders = ComputeDerivatives(in surface, derivative, uv);
+
+            // Compute wders (weight derivatives) separately
             int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, uv.X);
             double[][] Nu = Polynomials.BasisFunctionsDerivatives(
                 uSpanIndex,
@@ -419,30 +422,23 @@ namespace Nurbsy.Helpers
             int du = Math.Min(derivative, degreeU);
             int dv = Math.Min(derivative, degreeV);
 
-            // Compute Aders (weighted position) and wders (weight) derivatives
-            var Aders = new Vector3[derivative + 1][];
             var wders = new double[derivative + 1][];
             for (int i = 0; i <= derivative; i++)
             {
-                Aders[i] = new Vector3[derivative + 1];
                 wders[i] = new double[derivative + 1];
             }
 
-            var tempA = new Vector3[degreeV + 1];
             var tempW = new double[degreeV + 1];
 
             for (int k = 0; k <= du; k++)
             {
                 for (int s = 0; s <= degreeV; s++)
                 {
-                    tempA[s] = Vector3.Zero;
                     tempW[s] = 0.0;
                     for (int r = 0; r <= degreeU; r++)
                     {
                         var cp = controlPoints[uSpanIndex - degreeU + r][vSpanIndex - degreeV + s];
-                        double wBasis = cp.Weight * Nu[k][r];
-                        tempA[s] += cp.Value * (float)wBasis;
-                        tempW[s] += wBasis;
+                        tempW[s] += cp.Weight * Nu[k][r];
                     }
                 }
 
@@ -451,7 +447,6 @@ namespace Nurbsy.Helpers
                 {
                     for (int s = 0; s <= degreeV; s++)
                     {
-                        Aders[k][l] += tempA[s] * (float)Nv[l][s];
                         wders[k][l] += tempW[s] * Nv[l][s];
                     }
                 }
@@ -498,6 +493,82 @@ namespace Nurbsy.Helpers
             }
 
             return derivatives;
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetRationalFirstOrderDerivatives(Vector2, out T, out T, out T)"/>
+        public static void ComputeRationalSurfaceFirstOrderDerivatives(
+            in NurbsSurface<Vector3> surface,
+            Vector2 uv,
+            out Vector3 S,
+            out Vector3 Su,
+            out Vector3 Sv
+        )
+        {
+            var degreeU = surface.DegreeU;
+            var degreeV = surface.DegreeV;
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            Validate.Range(uv.X, knotsU[0], knotsU[knotsU.Count - 1], nameof(uv.X));
+            Validate.Range(uv.Y, knotsV[0], knotsV[knotsV.Count - 1], nameof(uv.Y));
+
+            int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, uv.X);
+            double[][] Nu = Polynomials.BasisFunctionsFirstOrderDerivative(
+                uSpanIndex,
+                degreeU,
+                knotsU,
+                uv.X
+            );
+
+            int vSpanIndex = Polynomials.GetKnotSpanIndex(degreeV, knotsV, uv.Y);
+            double[][] Nv = Polynomials.BasisFunctionsFirstOrderDerivative(
+                vSpanIndex,
+                degreeV,
+                knotsV,
+                uv.Y
+            );
+
+            int du = Math.Min(1, degreeU);
+            int dv = Math.Min(1, degreeV);
+
+            // Track Aders (weighted position) and wders (weight) for 2x2
+            var Aders = new Vector3[2, 2];
+            var wders = new double[2, 2];
+            var tempA = new Vector3[degreeV + 1];
+            var tempW = new double[degreeV + 1];
+
+            for (int k = 0; k <= du; k++)
+            {
+                for (int s = 0; s <= degreeV; s++)
+                {
+                    tempA[s] = Vector3.Zero;
+                    tempW[s] = 0.0;
+                    for (int r = 0; r <= degreeU; r++)
+                    {
+                        var cp = controlPoints[uSpanIndex - degreeU + r][vSpanIndex - degreeV + s];
+                        double wBasis = cp.Weight * Nu[k][r];
+                        tempA[s] += cp.Value * (float)wBasis;
+                        tempW[s] += wBasis;
+                    }
+                }
+
+                int dd = Math.Min(1 - k, dv);
+                for (int l = 0; l <= dd; l++)
+                {
+                    for (int s = 0; s <= degreeV; s++)
+                    {
+                        Aders[k, l] += tempA[s] * (float)Nv[l][s];
+                        wders[k, l] += tempW[s] * Nv[l][s];
+                    }
+                }
+            }
+
+            // Apply quotient rule
+            double invW = MathUtils.IsZero(wders[0, 0]) ? 0.0 : 1.0 / wders[0, 0];
+            S = Aders[0, 0] * (float)invW;
+            Sv = (Aders[0, 1] - (float)wders[0, 1] * S) * (float)invW;
+            Su = (Aders[1, 0] - (float)wders[1, 0] * S) * (float)invW;
         }
     }
 }

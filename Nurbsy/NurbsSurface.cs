@@ -275,5 +275,50 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// Optimized computation of rational surface first-order derivatives.
+        /// Returns S(u,v), Su, and Sv using the quotient rule.
+        /// </summary>
+        /// <param name="uv">The uv parameter.</param>
+        /// <param name="S">Output: Surface point S(u,v).</param>
+        /// <param name="Su">Output: First derivative in U direction ∂S/∂u.</param>
+        /// <param name="Sv">Output: First derivative in V direction ∂S/∂v.</param>
+        public void GetRationalFirstOrderDerivatives(Vector2 uv, out T S, out T Su, out T Sv)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                NurbsSurface2DHelper.ComputeRationalSurfaceFirstOrderDerivatives(
+                    in surface,
+                    uv,
+                    out var s2,
+                    out var su2,
+                    out var sv2
+                );
+                S = Unsafe.As<Vector2, T>(ref s2);
+                Su = Unsafe.As<Vector2, T>(ref su2);
+                Sv = Unsafe.As<Vector2, T>(ref sv2);
+                return;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                NurbsSurface3DHelper.ComputeRationalSurfaceFirstOrderDerivatives(
+                    in surface,
+                    uv,
+                    out var s3,
+                    out var su3,
+                    out var sv3
+                );
+                S = Unsafe.As<Vector3, T>(ref s3);
+                Su = Unsafe.As<Vector3, T>(ref su3);
+                Sv = Unsafe.As<Vector3, T>(ref sv3);
+                return;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

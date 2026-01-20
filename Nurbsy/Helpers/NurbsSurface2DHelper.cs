@@ -1512,6 +1512,7 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        /// <inheritdoc cref="NurbsSurface{T}.EquallyTessellate(out IReadOnlyList{T}, out IReadOnlyList{Vector2}, int)"/>
         public static void EquallyTessellate(
             in NurbsSurface<Vector2> surface,
             out IReadOnlyList<Vector2> tessellatedPoints,

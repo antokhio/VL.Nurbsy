@@ -987,7 +987,7 @@ namespace Nurbsy.Helpers
             if (isUDirection)
             {
                 // Transpose, refine each row, transpose back
-                var transposed = ControlPointsHelper.Transpose(controlPoints);
+                var transposed = MathUtils.Transpose(controlPoints);
                 var tempControlPoints = new List<ControlPoint<Vector3>[]>();
                 IReadOnlyList<double> newKnotsU = null;
 
@@ -1011,7 +1011,7 @@ namespace Nurbsy.Helpers
 
                 // Convert to array and transpose back
                 var tempArray = tempControlPoints.ToArray();
-                var updatedControlPoints = ControlPointsHelper.Transpose(tempArray);
+                var updatedControlPoints = MathUtils.Transpose(tempArray);
 
                 return new NurbsSurface<Vector3>(
                     surface.DegreeU,
@@ -1299,7 +1299,7 @@ namespace Nurbsy.Helpers
                 );
 
                 // Transpose, remove knot from each row, transpose back
-                var transposed = ControlPointsHelper.Transpose(controlPoints);
+                var transposed = MathUtils.Transpose(controlPoints);
                 var tempControlPoints = new List<ControlPoint<Vector3>[]>();
                 IReadOnlyList<double> newKnotsU = null;
 
@@ -1326,7 +1326,7 @@ namespace Nurbsy.Helpers
                 }
 
                 var tempArray = tempControlPoints.ToArray();
-                var updatedControlPoints = ControlPointsHelper.Transpose(tempArray);
+                var updatedControlPoints = MathUtils.Transpose(tempArray);
 
                 result = new NurbsSurface<Vector3>(
                     surface.DegreeU,
@@ -1375,6 +1375,206 @@ namespace Nurbsy.Helpers
                 result = new NurbsSurface<Vector3>(
                     surface.DegreeU,
                     surface.DegreeV,
+                    tempControlPoints.ToArray(),
+                    surface.KnotsU,
+                    newKnotsV
+                );
+            }
+
+            return true;
+        }
+
+        public static NurbsSurface<Vector3> ElevateDegree(
+            in NurbsSurface<Vector3> surface,
+            int times,
+            SurfaceDirection direction
+        )
+        {
+            Validate.Argument(
+                direction == SurfaceDirection.UDirection
+                    || direction == SurfaceDirection.VDirection,
+                nameof(direction),
+                "Direction must be UDirection or VDirection."
+            );
+            Validate.Argument(times > 0, nameof(times), "Times must be greater than zero.");
+
+            var controlPoints = surface.ControlPoints;
+            bool isUDirection = direction == SurfaceDirection.UDirection;
+
+            if (isUDirection)
+            {
+                // Transpose, elevate degree for each row, transpose back
+                var transposed = MathUtils.Transpose(controlPoints);
+                var tempControlPoints = new List<ControlPoint<Vector3>[]>();
+                IReadOnlyList<double> newKnotsU = null;
+
+                for (int i = 0; i < transposed.Count; i++)
+                {
+                    var curve = new NurbsCurve<Vector3>(
+                        surface.DegreeU,
+                        transposed[i],
+                        surface.KnotsU
+                    );
+                    var elevated = NurbsCurve3DHelper.ElevateDegree(curve, times);
+
+                    var cpArray = new ControlPoint<Vector3>[elevated.ControlPoints.Count];
+                    for (int j = 0; j < elevated.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = elevated.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsU = elevated.Knots;
+                }
+
+                var tempArray = tempControlPoints.ToArray();
+                var updatedControlPoints = MathUtils.Transpose(tempArray);
+
+                return new NurbsSurface<Vector3>(
+                    surface.DegreeU + times,
+                    surface.DegreeV,
+                    updatedControlPoints,
+                    newKnotsU,
+                    surface.KnotsV
+                );
+            }
+            else
+            {
+                // Elevate degree for each row directly
+                var tempControlPoints = new List<ControlPoint<Vector3>[]>();
+                IReadOnlyList<double> newKnotsV = null;
+
+                for (int i = 0; i < controlPoints.Count; i++)
+                {
+                    var rowCPs = new ControlPoint<Vector3>[controlPoints[i].Count];
+                    for (int j = 0; j < controlPoints[i].Count; j++)
+                    {
+                        rowCPs[j] = controlPoints[i][j];
+                    }
+
+                    var curve = new NurbsCurve<Vector3>(surface.DegreeV, rowCPs, surface.KnotsV);
+                    var elevated = NurbsCurve3DHelper.ElevateDegree(curve, times);
+
+                    var cpArray = new ControlPoint<Vector3>[elevated.ControlPoints.Count];
+                    for (int j = 0; j < elevated.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = elevated.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsV = elevated.Knots;
+                }
+
+                return new NurbsSurface<Vector3>(
+                    surface.DegreeU,
+                    surface.DegreeV + times,
+                    tempControlPoints.ToArray(),
+                    surface.KnotsU,
+                    newKnotsV
+                );
+            }
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.TryReduceDegree(SurfaceDirection, out NurbsSurface{T})"/>
+        public static bool ReduceDegree(
+            in NurbsSurface<Vector3> surface,
+            SurfaceDirection direction,
+            out NurbsSurface<Vector3> result
+        )
+        {
+            Validate.Argument(
+                direction == SurfaceDirection.UDirection
+                    || direction == SurfaceDirection.VDirection,
+                nameof(direction),
+                "Direction must be UDirection or VDirection."
+            );
+
+            var controlPoints = surface.ControlPoints;
+            bool isUDirection = direction == SurfaceDirection.UDirection;
+
+            if (isUDirection)
+            {
+                if (surface.DegreeU <= 1)
+                {
+                    result = surface;
+                    return false;
+                }
+
+                // Transpose, reduce degree for each row, transpose back
+                var transposed = MathUtils.Transpose(controlPoints);
+                var tempControlPoints = new List<ControlPoint<Vector3>[]>();
+                IReadOnlyList<double> newKnotsU = null;
+
+                for (int i = 0; i < transposed.Count; i++)
+                {
+                    var curve = new NurbsCurve<Vector3>(
+                        surface.DegreeU,
+                        transposed[i],
+                        surface.KnotsU
+                    );
+                    if (!NurbsCurve3DHelper.ReduceDegree(curve, out var reduced))
+                    {
+                        result = surface;
+                        return false;
+                    }
+
+                    var cpArray = new ControlPoint<Vector3>[reduced.ControlPoints.Count];
+                    for (int j = 0; j < reduced.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = reduced.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsU = reduced.Knots;
+                }
+
+                var tempArray = tempControlPoints.ToArray();
+                var updatedControlPoints = MathUtils.Transpose(tempArray);
+
+                result = new NurbsSurface<Vector3>(
+                    surface.DegreeU - 1,
+                    surface.DegreeV,
+                    updatedControlPoints,
+                    newKnotsU,
+                    surface.KnotsV
+                );
+            }
+            else
+            {
+                if (surface.DegreeV <= 1)
+                {
+                    result = surface;
+                    return false;
+                }
+
+                // Reduce degree for each row directly
+                var tempControlPoints = new List<ControlPoint<Vector3>[]>();
+                IReadOnlyList<double> newKnotsV = null;
+
+                for (int i = 0; i < controlPoints.Count; i++)
+                {
+                    var rowCPs = new ControlPoint<Vector3>[controlPoints[i].Count];
+                    for (int j = 0; j < controlPoints[i].Count; j++)
+                    {
+                        rowCPs[j] = controlPoints[i][j];
+                    }
+
+                    var curve = new NurbsCurve<Vector3>(surface.DegreeV, rowCPs, surface.KnotsV);
+                    if (!NurbsCurve3DHelper.ReduceDegree(curve, out var reduced))
+                    {
+                        result = surface;
+                        return false;
+                    }
+
+                    var cpArray = new ControlPoint<Vector3>[reduced.ControlPoints.Count];
+                    for (int j = 0; j < reduced.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = reduced.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsV = reduced.Knots;
+                }
+
+                result = new NurbsSurface<Vector3>(
+                    surface.DegreeU,
+                    surface.DegreeV - 1,
                     tempControlPoints.ToArray(),
                     surface.KnotsU,
                     newKnotsV

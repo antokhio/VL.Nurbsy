@@ -580,5 +580,68 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page209
+        /// Algorithm A5.10
+        /// Degree elevate a surface t times.
+        /// </summary>
+        /// <param name="times">Number of times to elevate the degree.</param>
+        /// <param name="direction">The direction to elevate (UDirection or VDirection).</param>
+        /// <returns>A new surface with elevated degree.</returns>
+        public NurbsSurface<T> ElevateDegree(int times, SurfaceDirection direction)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.ElevateDegree(in surface, times, direction);
+                return Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.ElevateDegree(in surface, times, direction);
+                return Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page227
+        /// Degree reduce U or V Direction Bezier-shape nurbs curve from degree to degree - 1.
+        /// </summary>
+        /// <param name="direction">The direction to reduce (UDirection or VDirection).</param>
+        /// <param name="result">The resulting surface with reduced degree.</param>
+        /// <returns>True if degree reduction was successful, false otherwise.</returns>
+        public bool TryReduceDegree(SurfaceDirection direction, out NurbsSurface<T> result)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                bool success = NurbsSurface2DHelper.TryReduceDegree(
+                    in surface,
+                    direction,
+                    out var result2
+                );
+                result = Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result2);
+                return success;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                bool success = NurbsSurface3DHelper.TryReduceDegree(
+                    in surface,
+                    direction,
+                    out var result3
+                );
+                result = Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result3);
+                return success;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

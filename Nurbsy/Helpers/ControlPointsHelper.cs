@@ -5,25 +5,6 @@ namespace Nurbsy.Helpers
 {
     internal static class ControlPointsHelper
     {
-        public static IReadOnlyList<IReadOnlyList<ControlPoint<T>>> Transpose<T>(
-            IReadOnlyList<IReadOnlyList<ControlPoint<T>>> controlPoints
-        )
-            where T : struct
-        {
-            int rows = controlPoints.Count;
-            int cols = controlPoints[0].Count;
-            var result = new ControlPoint<T>[cols][];
-            for (int j = 0; j < cols; j++)
-            {
-                result[j] = new ControlPoint<T>[rows];
-                for (int i = 0; i < rows; i++)
-                {
-                    result[j][i] = controlPoints[i][j];
-                }
-            }
-            return result;
-        }
-
         public static ControlPoint<T> BlendControlPoints<T>(
             ControlPoint<T> cp0,
             ControlPoint<T> cp1,

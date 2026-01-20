@@ -243,5 +243,23 @@ namespace Nurbsy.Algorithm
             }
             return M;
         }
+
+        public static IReadOnlyList<IReadOnlyList<T>> Transpose<T>(
+            IReadOnlyList<IReadOnlyList<T>> input
+        )
+        {
+            int rows = input.Count;
+            int cols = input[0].Count;
+            var result = new T[cols][];
+            for (int i = 0; i < cols; i++)
+            {
+                result[i] = new T[rows];
+                for (int j = 0; j < rows; j++)
+                {
+                    result[i][j] = input[j][i];
+                }
+            }
+            return result;
+        }
     }
 }

@@ -1057,6 +1057,7 @@ namespace Nurbsy.Helpers
             }
         }
 
+        /// <inheritdoc cref="NurbsSurface{T}.DecomposeToBeziers()"/>
         public static IReadOnlyList<BezierSurface<Vector3>> DecomposeToBeziers(
             in NurbsSurface<Vector3> surface
         )

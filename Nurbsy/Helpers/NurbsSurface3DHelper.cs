@@ -2045,6 +2045,45 @@ namespace Nurbsy.Helpers
             return true;
         }
 
+        public static double ApproximateArea(
+            in NurbsSurface<Vector3> surface,
+            IntegratorType type = IntegratorType.GaussLegendre,
+            double tolerance = 1e-6
+        )
+        {
+            // Area element function
+            static double AreaElement(NurbsSurface<Vector3> surf, double u, double v)
+            {
+                var uv = new Vector2((float)u, (float)v);
+                ComputeRationalSurfaceFirstOrderDerivatives(
+                    in surf,
+                    uv,
+                    out _,
+                    out var Su,
+                    out var Sv
+                );
+                return SurfaceAreaHelper.ComputeAreaElement(Su, Sv);
+            }
+
+            return type switch
+            {
+                IntegratorType.Simpson => SurfaceAreaHelper.ApproximateAreaSimpson(
+                    in surface,
+                    AreaElement,
+                    tolerance
+                ),
+                IntegratorType.GaussLegendre => SurfaceAreaHelper.ApproximateAreaGaussLegendre(
+                    in surface,
+                    AreaElement
+                ),
+                IntegratorType.Chebyshev => SurfaceAreaHelper.ApproximateAreaChebyshev(
+                    in surface,
+                    AreaElement
+                ),
+                _ => SurfaceAreaHelper.ApproximateAreaGaussLegendre(in surface, AreaElement),
+            };
+        }
+
         /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>
         public static bool IsClosed(in NurbsSurface<Vector3> surface, SurfaceDirection direction)
         {

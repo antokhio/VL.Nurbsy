@@ -1867,6 +1867,7 @@ namespace Nurbsy.Helpers
             return new Vector2((float)u0, (float)v0);
         }
 
+        /// <inheritdoc cref="NurbsSurface{T}.TryGetUVTangent(Vector2, T, out Vector2)"/>
         public static bool GetUVTangent(
             in NurbsSurface<Vector2> surface,
             Vector2 param,
@@ -1903,6 +1904,45 @@ namespace Nurbsy.Helpers
 
             uvTangent = new Vector2((float)u, (float)v);
             return true;
+        }
+
+        public static double ApproximateArea(
+            in NurbsSurface<Vector2> surface,
+            IntegratorType type = IntegratorType.GaussLegendre,
+            double tolerance = 1e-6
+        )
+        {
+            // Area element function
+            static double AreaElement(NurbsSurface<Vector2> surf, double u, double v)
+            {
+                var uv = new Vector2((float)u, (float)v);
+                ComputeRationalSurfaceFirstOrderDerivatives(
+                    in surf,
+                    uv,
+                    out _,
+                    out var Su,
+                    out var Sv
+                );
+                return SurfaceAreaHelper.ComputeAreaElement(Su, Sv);
+            }
+
+            return type switch
+            {
+                IntegratorType.Simpson => SurfaceAreaHelper.ApproximateAreaSimpson(
+                    in surface,
+                    AreaElement,
+                    tolerance
+                ),
+                IntegratorType.GaussLegendre => SurfaceAreaHelper.ApproximateAreaGaussLegendre(
+                    in surface,
+                    AreaElement
+                ),
+                IntegratorType.Chebyshev => SurfaceAreaHelper.ApproximateAreaChebyshev(
+                    in surface,
+                    AreaElement
+                ),
+                _ => SurfaceAreaHelper.ApproximateAreaGaussLegendre(in surface, AreaElement),
+            };
         }
 
         /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>

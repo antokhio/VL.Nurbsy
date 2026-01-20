@@ -182,5 +182,18 @@ namespace Nurbsy.Algorithm
 
             return reversed;
         }
+
+        public static List<double> GetUniqueKnots(IReadOnlyList<double> knots)
+        {
+            var unique = new List<double> { knots[0] };
+            for (int i = 1; i < knots.Count; i++)
+            {
+                if (!MathUtils.IsAlmostEqualTo(knots[i], unique[^1]))
+                {
+                    unique.Add(knots[i]);
+                }
+            }
+            return unique;
+        }
     }
 }

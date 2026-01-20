@@ -838,6 +838,32 @@ namespace Nurbsy
         }
 
         /// <summary>
+        /// Compute the approximate area of the surface using numerical integration.
+        /// </summary>
+        /// <param name="type">The integration method to use (Simpson, GaussLegendre, or Chebyshev).</param>
+        /// <param name="tolerance">Tolerance for adaptive methods (default 1e-6).</param>
+        /// <returns>The approximate surface area.</returns>
+        public double ApproximateArea(
+            IntegratorType type = IntegratorType.GaussLegendre,
+            double tolerance = 1e-6
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                return NurbsSurface2DHelper.ApproximateArea(in surface, type, tolerance);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                return NurbsSurface3DHelper.ApproximateArea(in surface, type, tolerance);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
         /// Check if the surface is closed in the specified direction.
         /// A surface is closed in a direction if all iso-curves in that direction are closed.
         ///  [0][0]  [0][1] ... ...  [0][m]     ------- v direction

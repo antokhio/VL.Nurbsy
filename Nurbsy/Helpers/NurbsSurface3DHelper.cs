@@ -1667,5 +1667,58 @@ namespace Nurbsy.Helpers
             tessellatedPoints = points;
             correspondingUVs = uvs;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.IsClosed(SurfaceDirection)"/>
+        public static bool IsClosed(in NurbsSurface<Vector3> surface, SurfaceDirection direction)
+        {
+            Validate.Argument(
+                direction == SurfaceDirection.UDirection
+                    || direction == SurfaceDirection.VDirection,
+                nameof(direction),
+                "Direction must be UDirection or VDirection."
+            );
+
+            var controlPoints = surface.ControlPoints;
+            bool isUDirection = direction == SurfaceDirection.UDirection;
+
+            if (isUDirection)
+            {
+                var transposed = MathUtils.Transpose(controlPoints);
+
+                for (int i = 0; i < transposed.Length; i++)
+                {
+                    var curve = new NurbsCurve<Vector3>(
+                        surface.DegreeU,
+                        transposed[i],
+                        surface.KnotsU
+                    );
+                    if (!NurbsCurve3DHelper.IsClosed(curve))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            else
+            {
+                for (int i = 0; i < controlPoints.Count; i++)
+                {
+                    var rowCPs = new ControlPoint<Vector3>[controlPoints[i].Count];
+                    for (int j = 0; j < controlPoints[i].Count; j++)
+                    {
+                        rowCPs[j] = controlPoints[i][j];
+                    }
+
+                    var curve = new NurbsCurve<Vector3>(surface.DegreeV, rowCPs, surface.KnotsV);
+                    if (!NurbsCurve3DHelper.IsClosed(curve))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
     }
 }

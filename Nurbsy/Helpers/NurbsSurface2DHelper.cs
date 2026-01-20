@@ -1195,5 +1195,120 @@ namespace Nurbsy.Helpers
 
             return result;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.TryRemoveKnot(double, int, SurfaceDirection, out NurbsSurface{T})"/>`
+        public static bool RemoveKnot(
+            in NurbsSurface<Vector2> surface,
+            double removeKnot,
+            int times,
+            SurfaceDirection direction,
+            out NurbsSurface<Vector2> result
+        )
+        {
+            Validate.Argument(
+                direction == SurfaceDirection.UDirection
+                    || direction == SurfaceDirection.VDirection,
+                nameof(direction),
+                "Direction must be UDirection or VDirection."
+            );
+            Validate.Argument(times > 0, nameof(times), "Times must be greater than zero.");
+
+            var controlPoints = surface.ControlPoints;
+            bool isUDirection = direction == SurfaceDirection.UDirection;
+
+            if (isUDirection)
+            {
+                Validate.Range(
+                    removeKnot,
+                    surface.KnotsU[0],
+                    surface.KnotsU[surface.KnotsU.Count - 1],
+                    nameof(removeKnot)
+                );
+
+                // Transpose, remove knot from each row, transpose back
+                var transposed = ControlPointsHelper.Transpose(controlPoints);
+                var tempControlPoints = new List<ControlPoint<Vector2>[]>();
+                IReadOnlyList<double> newKnotsU = null;
+
+                for (int i = 0; i < transposed.Count; i++)
+                {
+                    var curve = new NurbsCurve<Vector2>(
+                        surface.DegreeU,
+                        transposed[i],
+                        surface.KnotsU
+                    );
+                    if (!NurbsCurve2DHelper.RemoveKnot(curve, removeKnot, times, out var removed))
+                    {
+                        result = surface;
+                        return false;
+                    }
+
+                    var cpArray = new ControlPoint<Vector2>[removed.ControlPoints.Count];
+                    for (int j = 0; j < removed.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = removed.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsU = removed.Knots;
+                }
+
+                var tempArray = tempControlPoints.ToArray();
+                var updatedControlPoints = ControlPointsHelper.Transpose(tempArray);
+
+                result = new NurbsSurface<Vector2>(
+                    surface.DegreeU,
+                    surface.DegreeV,
+                    updatedControlPoints,
+                    newKnotsU,
+                    surface.KnotsV
+                );
+            }
+            else
+            {
+                Validate.Range(
+                    removeKnot,
+                    surface.KnotsV[0],
+                    surface.KnotsV[surface.KnotsV.Count - 1],
+                    nameof(removeKnot)
+                );
+
+                var tempControlPoints = new List<ControlPoint<Vector2>[]>();
+                IReadOnlyList<double> newKnotsV = null;
+
+                for (int i = 0; i < controlPoints.Count; i++)
+                {
+                    var rowCPs = new ControlPoint<Vector2>[controlPoints[i].Count];
+                    for (int j = 0; j < controlPoints[i].Count; j++)
+                    {
+                        rowCPs[j] = controlPoints[i][j];
+                    }
+
+                    var curve = new NurbsCurve<Vector2>(surface.DegreeV, rowCPs, surface.KnotsV);
+                    if (!NurbsCurve2DHelper.RemoveKnot(curve, removeKnot, times, out var removed))
+                    {
+                        result = surface;
+                        return false;
+                    }
+
+                    var cpArray = new ControlPoint<Vector2>[removed.ControlPoints.Count];
+                    for (int j = 0; j < removed.ControlPoints.Count; j++)
+                    {
+                        cpArray[j] = removed.ControlPoints[j];
+                    }
+                    tempControlPoints.Add(cpArray);
+                    newKnotsV = removed.Knots;
+                }
+
+                result = new NurbsSurface<Vector2>(
+                    surface.DegreeU,
+                    surface.DegreeV,
+                    tempControlPoints.ToArray(),
+                    surface.KnotsU,
+                    newKnotsV
+                );
+            }
+
+            return true;
+        }
     }
 }

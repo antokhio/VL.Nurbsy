@@ -533,5 +533,52 @@ namespace Nurbsy
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");
         }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page186
+        /// Surface knot removal.
+        /// </summary>
+        /// <param name="removeKnot">The knot value to remove.</param>
+        /// <param name="times">Number of times to remove the knot.</param>
+        /// <param name="direction">The direction to remove from (UDirection or VDirection).</param>
+        /// <param name="result">The resulting surface with removed knot.</param>
+        /// <returns>True if the knot was successfully removed.</returns>
+        public bool TryRemoveKnot(
+            double removeKnot,
+            int times,
+            SurfaceDirection direction,
+            out NurbsSurface<T> result
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                bool success = NurbsSurface2DHelper.RemoveKnot(
+                    in surface,
+                    removeKnot,
+                    times,
+                    direction,
+                    out var result2
+                );
+                result = Unsafe.As<NurbsSurface<Vector2>, NurbsSurface<T>>(ref result2);
+                return success;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                bool success = NurbsSurface3DHelper.RemoveKnot(
+                    in surface,
+                    removeKnot,
+                    times,
+                    direction,
+                    out var result3
+                );
+                result = Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result3);
+                return success;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
     }
 }

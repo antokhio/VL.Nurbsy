@@ -2005,6 +2005,60 @@ namespace Nurbsy.Helpers
             return new Vector3(result.X, result.Y, result.Z) / result.W;
         }
 
+        public static double GetParamAt(NurbsCurve<Vector3> curve, double t)
+        {
+            var knots = curve.Knots;
+            double start = knots[0];
+            double end = knots[knots.Count - 1];
+
+            if (t <= 0.0)
+                return start;
+            if (t >= 1.0)
+                return end;
+
+            double totalLength = curve.Length;
+            double targetLength = t * totalLength;
+            double currentLength = 0.0;
+            int degree = curve.Degree;
+
+            var abscissae = Integrator.GaussLegendreAbscissae;
+            var weights = Integrator.GaussLegendreWeights;
+            int size = abscissae.Count;
+
+            for (int i = degree; i < knots.Count - degree - 1; i++)
+            {
+                double a = knots[i];
+                double b = knots[i + 1];
+                if (MathUtils.IsAlmostEqualTo(a, b))
+                    continue;
+
+                double halfLen = (b - a) / 2.0;
+                double mid = (a + b) / 2.0;
+                double spanLength = 0.0;
+
+                for (int j = 0; j < size; j++)
+                {
+                    double val = halfLen * abscissae[j] + mid;
+                    var ders = ComputeRationalCurveDerivatives(curve, 1, val);
+                    double derLen = ders[1].Length();
+                    if (double.IsNaN(derLen))
+                        derLen = 0.0;
+                    spanLength += weights[j] * derLen;
+                }
+                spanLength *= halfLen;
+
+                if (currentLength + spanLength >= targetLength)
+                {
+                    double remaining = targetLength - currentLength;
+                    remaining = Math.Max(0, remaining);
+                    return GetParamByLength(curve, a, b, remaining, IntegratorType.GaussLegendre);
+                }
+                currentLength += spanLength;
+            }
+
+            return end;
+        }
+
         public static IReadOnlyList<Vector3> ComputeRationalCurveDerivatives(
             NurbsCurve<Vector3> curve,
             int derivative,
@@ -3287,7 +3341,7 @@ namespace Nurbsy.Helpers
             double start = knots[0];
             double end = knots[knots.Count - 1];
 
-            double totalLength = ApproximateLength(curve, type);
+            double totalLength = curve.Length;
             if (MathUtils.IsLessThan(totalLength, givenLength, Constants.DistanceEpsilon))
             {
                 return end;
@@ -3297,6 +3351,9 @@ namespace Nurbsy.Helpers
                 return start;
             }
 
+            double accumulatedLength = 0.0;
+            double searchStart = start;
+
             for (int i = 0; i < knots.Count; i++)
             {
                 double knot = knots[i];
@@ -3305,7 +3362,7 @@ namespace Nurbsy.Helpers
 
                 if (SplitAt(curve, knot, out var left, out var right))
                 {
-                    double length = ApproximateLength(left, type);
+                    double length = left.Length;
                     if (MathUtils.IsAlmostEqualTo(length, givenLength, Constants.DistanceEpsilon))
                     {
                         return knot;
@@ -3315,9 +3372,14 @@ namespace Nurbsy.Helpers
                         end = knot;
                         break;
                     }
+                    else
+                    {
+                        searchStart = knot;
+                        accumulatedLength = length;
+                    }
                 }
             }
-            return GetParamByLength(curve, start, end, givenLength, type);
+            return GetParamByLength(curve, searchStart, end, givenLength - accumulatedLength, type);
         }
 
         private static double GetParamByLength(

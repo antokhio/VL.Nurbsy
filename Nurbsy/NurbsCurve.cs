@@ -2,8 +2,7 @@
  * Original Author:
  * 2023/06/08 - Yuqing Liang (BIMCoder Liang)
  * bim.frankliang@foxmail.com
- * Ported by:
- * Anton Kalabukhov (antokhio)
+ * Adopted by: antokhio (Anton Kalabukhov) 2026
  *
  * Use of this source code is governed by a LGPL-2.1 license that can be found in
  * the LICENSE file.
@@ -40,6 +39,11 @@ namespace Nurbsy
         public IReadOnlyList<double> Knots { get; }
 
         /// <summary>
+        /// Gets the total approximate arc length of the curve.
+        /// </summary>
+        public float Length { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="NurbsCurve{T}"/> struct with clamped knots generated automatically.
         /// </summary>
         /// <param name="degree">The degree of the curve. Must be greater than zero.</param>
@@ -51,6 +55,8 @@ namespace Nurbsy
             Knots = KnotsUtils.GenerateClampedKnots(Degree, ControlPoints.Count);
 
             Check();
+
+            Length = (float)ApproximateLength();
         }
 
         /// <summary>
@@ -70,6 +76,8 @@ namespace Nurbsy
             Knots = knots;
 
             Check();
+
+            Length = (float)ApproximateLength();
         }
 
         /// <summary>
@@ -85,6 +93,8 @@ namespace Nurbsy
             Knots = knots;
 
             Check();
+
+            Length = (float)ApproximateLength();
         }
 
         /// <summary>
@@ -114,6 +124,29 @@ namespace Nurbsy
                 nameof(NurbsCurve<T>),
                 "Arguments must be fit: m = n + p + 1"
             );
+        }
+
+        /// <summary>
+        /// Calculate parameter on curve corresponding to normalized length t (0.0 to 1.0).
+        /// Optimized to avoid object allocation.
+        /// </summary>
+        /// <param name="t">Normalized length (0.0 to 1.0).</param>
+        /// <returns>Parameter on curve.</returns>
+        public double GetParamAt(float t)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
+                return NurbsCurve2DHelper.GetParamAt(curve2, t);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
+                return NurbsCurve3DHelper.GetParamAt(curve3, t);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");
         }
 
         /// <summary>
@@ -460,19 +493,19 @@ namespace Nurbsy
         /// <param name="min">The new start parameter.</param>
         /// <param name="max">The new end parameter.</param>
         /// <returns>A reparameterized NURBS curve.</returns>
-        public NurbsCurve<T> Reparametrize(double min, double max)
+        public NurbsCurve<T> Reparametrize(float min = 0f, float max = 1f)
         {
             if (typeof(T) == typeof(Vector2))
             {
                 ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
-                var result = NurbsCurve2DHelper.Reparametrize(curve2, min, max);
+                var result = NurbsCurve2DHelper.Reparametrize(curve2, (double)min, (double)max);
                 return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
             }
 
             if (typeof(T) == typeof(Vector3))
             {
                 ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
-                var result = NurbsCurve3DHelper.Reparametrize(curve3, min, max);
+                var result = NurbsCurve3DHelper.Reparametrize(curve3, (double)min, (double)max);
                 return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
             }
 
@@ -535,12 +568,12 @@ namespace Nurbsy
         /// <param name="left">The resulting left part of the curve.</param>
         /// <param name="right">The resulting right part of the curve.</param>
         /// <returns>True if the split was successful; otherwise, false.</returns>
-        public bool SplitAt(double parameter, out NurbsCurve<T> left, out NurbsCurve<T> right)
+        public bool SplitAt(float parameter, out NurbsCurve<T> left, out NurbsCurve<T> right)
         {
             if (typeof(T) == typeof(Vector2))
             {
                 ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
-                if (NurbsCurve2DHelper.SplitAt(curve2, parameter, out var l2, out var r2))
+                if (NurbsCurve2DHelper.SplitAt(curve2, (double)parameter, out var l2, out var r2))
                 {
                     left = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref l2);
                     right = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref r2);
@@ -554,7 +587,7 @@ namespace Nurbsy
             if (typeof(T) == typeof(Vector3))
             {
                 ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
-                if (NurbsCurve3DHelper.SplitAt(curve3, parameter, out var l3, out var r3))
+                if (NurbsCurve3DHelper.SplitAt(curve3, (double)parameter, out var l3, out var r3))
                 {
                     left = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref l3);
                     right = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref r3);
@@ -575,12 +608,19 @@ namespace Nurbsy
         /// <param name="endParameter">The end parameter of the segment.</param>
         /// <param name="segment">The extracted curve segment.</param>
         /// <returns>True if the segmentation was successful; otherwise, false.</returns>
-        public bool Segment(double startParameter, double endParameter, out NurbsCurve<T> segment)
+        public bool Segment(float startParameter, float endParameter, out NurbsCurve<T> segment)
         {
             if (typeof(T) == typeof(Vector2))
             {
                 ref var curve2 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector2>>(ref this);
-                if (NurbsCurve2DHelper.Segment(curve2, startParameter, endParameter, out var res2))
+                if (
+                    NurbsCurve2DHelper.Segment(
+                        curve2,
+                        (double)startParameter,
+                        (double)endParameter,
+                        out var res2
+                    )
+                )
                 {
                     segment = Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref res2);
                     return true;
@@ -592,7 +632,14 @@ namespace Nurbsy
             if (typeof(T) == typeof(Vector3))
             {
                 ref var curve3 = ref Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref this);
-                if (NurbsCurve3DHelper.Segment(curve3, startParameter, endParameter, out var res3))
+                if (
+                    NurbsCurve3DHelper.Segment(
+                        curve3,
+                        (double)startParameter,
+                        (double)endParameter,
+                        out var res3
+                    )
+                )
                 {
                     segment = Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref res3);
                     return true;
@@ -1178,7 +1225,7 @@ namespace Nurbsy
         /// </summary>
         /// <param name="type">Integrator type to use.</param>
         /// <returns>Approximate length of curve.</returns>
-        public double ApproximateLength(IntegratorType type)
+        public double ApproximateLength(IntegratorType type = IntegratorType.GaussLegendre)
         {
             if (typeof(T) == typeof(Vector2))
             {
@@ -1202,7 +1249,10 @@ namespace Nurbsy
         /// <param name="type">IntegratorType</param>
         /// <returns>Parameter on curve.</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public double GetParamOnCurve(float lenght, IntegratorType type)
+        public double GetParamOnCurve(
+            float lenght,
+            IntegratorType type = IntegratorType.GaussLegendre
+        )
         {
             if (typeof(T) == typeof(Vector2))
             {

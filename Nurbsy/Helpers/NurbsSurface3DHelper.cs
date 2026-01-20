@@ -1583,5 +1583,89 @@ namespace Nurbsy.Helpers
 
             return true;
         }
+
+        /// <inheritdoc cref="NurbsSurface{T}.EquallyTessellate(out IReadOnlyList{T}, out IReadOnlyList{Vector2}, int)"/>
+        public static void EquallyTessellate(
+            in NurbsSurface<Vector3> surface,
+            out IReadOnlyList<Vector3> tessellatedPoints,
+            out IReadOnlyList<Vector2> correspondingUVs,
+            int intervalsPerSpan = 100
+        )
+        {
+            var knotsU = surface.KnotsU;
+            var knotsV = surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            // Get unique knots in U direction
+            var uniqueKnotsU = new List<double> { knotsU[0] };
+            for (int i = 1; i < knotsU.Count; i++)
+            {
+                if (!MathUtils.IsAlmostEqualTo(knotsU[i], uniqueKnotsU[^1]))
+                {
+                    uniqueKnotsU.Add(knotsU[i]);
+                }
+            }
+
+            // Get unique knots in V direction
+            var uniqueKnotsV = new List<double> { knotsV[0] };
+            for (int i = 1; i < knotsV.Count; i++)
+            {
+                if (!MathUtils.IsAlmostEqualTo(knotsV[i], uniqueKnotsV[^1]))
+                {
+                    uniqueKnotsV.Add(knotsV[i]);
+                }
+            }
+
+            // Tessellate U parameters
+            var tessellatedU = new List<double>();
+            for (int i = 0; i < uniqueKnotsU.Count - 1; i++)
+            {
+                double currentU = uniqueKnotsU[i];
+                double nextU = uniqueKnotsU[i + 1];
+                double stepU = (nextU - currentU) / intervalsPerSpan;
+                for (int j = 0; j < intervalsPerSpan; j++)
+                {
+                    tessellatedU.Add(currentU + stepU * j);
+                }
+            }
+
+            // Tessellate V parameters
+            var tessellatedV = new List<double>();
+            for (int i = 0; i < uniqueKnotsV.Count - 1; i++)
+            {
+                double currentV = uniqueKnotsV[i];
+                double nextV = uniqueKnotsV[i + 1];
+                double stepV = (nextV - currentV) / intervalsPerSpan;
+                for (int j = 0; j < intervalsPerSpan; j++)
+                {
+                    tessellatedV.Add(currentV + stepV * j);
+                }
+            }
+
+            // Generate grid of points
+            var points = new List<Vector3>();
+            var uvs = new List<Vector2>();
+
+            for (int i = 0; i < tessellatedU.Count; i++)
+            {
+                for (int j = 0; j < tessellatedV.Count; j++)
+                {
+                    var uv = new Vector2((float)tessellatedU[i], (float)tessellatedV[j]);
+                    uvs.Add(uv);
+                    points.Add(GetPointOnSurface(in surface, uv));
+                }
+            }
+
+            // Add final corner point
+            var lastUV = new Vector2((float)knotsU[^1], (float)knotsV[^1]);
+            uvs.Add(lastUV);
+
+            var lastCP = controlPoints[^1][^1];
+            var lastPoint = MathUtils.IsZero(lastCP.Weight) ? Vector3.Zero : lastCP.Value;
+            points.Add(lastPoint);
+
+            tessellatedPoints = points;
+            correspondingUVs = uvs;
+        }
     }
 }

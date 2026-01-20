@@ -620,7 +620,7 @@ namespace Nurbsy
             if (typeof(T) == typeof(Vector2))
             {
                 ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
-                bool success = NurbsSurface2DHelper.TryReduceDegree(
+                bool success = NurbsSurface2DHelper.ReduceDegree(
                     in surface,
                     direction,
                     out var result2
@@ -632,13 +632,55 @@ namespace Nurbsy
             if (typeof(T) == typeof(Vector3))
             {
                 ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
-                bool success = NurbsSurface3DHelper.TryReduceDegree(
+                bool success = NurbsSurface3DHelper.ReduceDegree(
                     in surface,
                     direction,
                     out var result3
                 );
                 result = Unsafe.As<NurbsSurface<Vector3>, NurbsSurface<T>>(ref result3);
                 return success;
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// The NURBS Book 2nd Edition Page232
+        /// Equally spaced parameter values on each candidate span.
+        /// </summary>
+        /// <param name="tessellatedPoints">Output: The tessellated surface points.</param>
+        /// <param name="correspondingUVs">Output: The UV parameters corresponding to each point.</param>
+        /// <param name="intervalsPerSpan">Number of intervals per knot span (default 100).</param>
+        public void EquallyTessellate(
+            out IReadOnlyList<T> tessellatedPoints,
+            out IReadOnlyList<Vector2> correspondingUVs,
+            int intervalsPerSpan = 100
+        )
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                NurbsSurface2DHelper.EquallyTessellate(
+                    in surface,
+                    out var points,
+                    out correspondingUVs,
+                    intervalsPerSpan
+                );
+                tessellatedPoints = Unsafe.As<IReadOnlyList<Vector2>, IReadOnlyList<T>>(ref points);
+                return;
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                NurbsSurface3DHelper.EquallyTessellate(
+                    in surface,
+                    out var points,
+                    out correspondingUVs,
+                    intervalsPerSpan
+                );
+                tessellatedPoints = Unsafe.As<IReadOnlyList<Vector3>, IReadOnlyList<T>>(ref points);
+                return;
             }
 
             throw new NotSupportedException($"Type {typeof(T)} is not supported.");

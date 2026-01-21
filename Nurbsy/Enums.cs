@@ -33,22 +33,34 @@
     /// </summary>
     public enum SurfaceCurvature
     {
-        /// <summary>Gaussian curvature (K = k1 * k2)</summary>
+        /// <summary>
+        /// Gaussian curvature (K = k1 * k2)
+        /// </summary>
         Gauss,
 
-        /// <summary>Mean curvature (H = (k1 + k2) / 2)</summary>
+        /// <summary>
+        /// Mean curvature (H = (k1 + k2) / 2)
+        /// </summary>
         Mean,
 
-        /// <summary>Maximum principal curvature (k1)</summary>
+        /// <summary>
+        /// Maximum principal curvature (k1)
+        /// </summary>
         Maximum,
 
-        /// <summary>Minimum principal curvature (k2)</summary>
+        /// <summary>
+        /// Minimum principal curvature (k2)
+        /// </summary>
         Minimum,
 
-        /// <summary>Absolute curvature (|k1| + |k2|)</summary>
+        /// <summary>
+        /// Absolute curvature (|k1| + |k2|)
+        /// </summary>
         Abs,
 
-        /// <summary>Root mean square curvature (sqrt(k1² + k2²))</summary>
+        /// <summary>
+        /// Root mean square curvature (sqrt(k1² + k2²))
+        /// </summary>
         Rms,
     }
 

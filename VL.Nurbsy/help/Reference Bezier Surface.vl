@@ -72,14 +72,8 @@
             </p:NodeReference>
             <Pin Id="LszroaOxQetNTHvyPmCP3f" Name="Control Points" Kind="InputPin" />
             <Pin Id="DExsPejGsfVLIhWZV4WPxx" Name="Output" Kind="OutputPin" />
-            <Pin Id="FwqEoZeML0oNv1XXLRLzwa" Name="Control Points Count" Kind="InputPin" />
             <Pin Id="TaMUTyYEDJzMSuu3c2YNhH" Name="Update" Kind="InputPin" />
           </Node>
-          <Pad Id="OBM0bSDz0SHMdhg9J3O2ET" Comment="Control Points Count" Bounds="523,370,35,28" ShowValueBox="true" isIOBox="true" Value="3, 3">
-            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-              <Choice Kind="TypeFlag" Name="Int2" />
-            </p:TypeAnnotation>
-          </Pad>
           <!--
 
     ************************ DrawHorizontals ************************
@@ -677,7 +671,6 @@
         <Link Id="BiKJbqZ0F2pQSFlsm7UJtQ" Ids="DB5nOXtftCZPweySOzUC6l,UMd4wnAjW1PQUBboPqDlfg" />
         <Link Id="R5a3AOOzjC8Lf0wmT1u6b3" Ids="IjsgGHxk7cEOkAk75d1PoP,Io0R2Sf6iHmOAfFv8gavj2" />
         <Link Id="QWIcJh4oUW8Nz9RMWo3thr" Ids="IjsgGHxk7cEOkAk75d1PoP,S1ptBCyZNmANQi0HLgSWOp" />
-        <Link Id="HmPKNeroCBZNmXYNdA6NMA" Ids="OBM0bSDz0SHMdhg9J3O2ET,FwqEoZeML0oNv1XXLRLzwa" />
       </Patch>
     </Node>
   </Patch>

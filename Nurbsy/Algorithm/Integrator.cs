@@ -1,4 +1,18 @@
-﻿namespace Nurbsy.Algorithm
+﻿/*
+ * Ported by:
+ * 2025 - Anton Kalabuhov (antokhio)
+ *
+ * Original Author:
+ * 2024 - Yuqing Liang (BIMCoder Liang)
+ * bim.frankliang@foxmail.com
+ *
+ * Based on LNLib: https://github.com/BIMCoderLiang/LNLib
+ *
+ * Use of this source code is governed by a LGPL-2.1 license that can be found in
+ * the LICENSE file.
+ */
+
+namespace Nurbsy.Algorithm
 {
     public delegate double IntegrationFunction(double t, object customData);
     public delegate double BinaryIntegrationFunction(double u, double v, object customData);

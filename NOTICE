@@ -1,5 +1,11 @@
-VL.LNLib
-Copyright (C) 2025  Anton Kalabuhov, antokhio
+Nurbsy VL.Nurbsy
+Copyright (C) 2025 Anton Kalabuhov, antokhio
+
+Based on LNLib https://github.com/BIMCoderLiang/LNLib
+Copyright (C) 2023-2024 Yuqing Liang (BIMCoder Liang)
+
+Portions (Voronoi) based on MapManager library
+Copyright (C) 2005 Shane O'Sullivan
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

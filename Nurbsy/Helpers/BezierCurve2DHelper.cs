@@ -1,4 +1,18 @@
-﻿using Nurbsy.Algorithm;
+﻿/*
+ * Ported by:
+ * 2025 - Anton Kalabuhov (antokhio)
+ *
+ * Original Author:
+ * 2023 - Yuqing Liang (BIMCoder Liang)
+ * bim.frankliang@foxmail.com
+ *
+ * Based on LNLib: https://github.com/BIMCoderLiang/LNLib
+ *
+ * Use of this source code is governed by a LGPL-2.1 license that can be found in
+ * the LICENSE file.
+ */
+
+using Nurbsy.Algorithm;
 using Stride.Core.Mathematics;
 
 namespace Nurbsy.Helpers
@@ -30,7 +44,7 @@ namespace Nurbsy.Helpers
                     // But if T is a weighted point, maybe operator+ handles it?
                     // In our case control points are explicit (Value, Weight).
 
-                    // Let's implement Rational De Casteljau (Projective Space) which is correct for NURBS/Rational Beziers.
+                    // Rational De Casteljau (Projective Space) which is correct for NURBS/Rational Beziers.
                     // P_w = (x*w, y*w, z*w, w). Interpolate in 3D/4D space, then project back.
                     // Since it is 2D: Projective is 3D (Xw, Yw, w).
 
@@ -49,20 +63,6 @@ namespace Nurbsy.Helpers
 
                     double wNew = oneMinusT * w0 + t * w1;
                     Vector2 vNew = (float)oneMinusT * v0 + (float)t * v1;
-
-                    // Store back as ControlPoint (we can keep it homogeneous or normalize immediately?)
-                    // Standard algo keeps homogeneous until the end.
-                    // But we store back into temp[i] which is ControlPoint<Vector2> (Value, Weight).
-                    // So we can normalize immediately or store (vNew/wNew, wNew).
-                    // Storing (vNew/wNew, wNew) effectively keeps the geometric info correct.
-                    // But wait, next iteration needs homogeneous structure?
-                    // Actually: P_i^k = (1-t) P_i^{k-1} + t P_{i+1}^{k-1}
-                    // For rational:
-                    //   w_i^k = (1-t) w_i^{k-1} + t w_{i+1}^{k-1}
-                    //   (wP)_i^k = (1-t) (wP)_i^{k-1} + t (wP)_{i+1}^{k-1}
-                    //   P_i^k = (wP)_i^k / w_i^k
-
-                    // So we can store updated value and weight.
 
                     if (Math.Abs(wNew) < MathUtils.Epsilon)
                     {

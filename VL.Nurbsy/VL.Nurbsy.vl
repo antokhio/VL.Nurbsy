@@ -22,7 +22,7 @@
 -->
           <Node Name="BezierCurve" Bounds="173,322" Id="ES9awM0zTonQTGjfEDu4aL">
             <p:NodeReference>
-              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
               <CategoryReference Kind="Category" Name="Primitive" />
             </p:NodeReference>
             <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
@@ -31,7 +31,7 @@
               <AssemblyReference ID="Nurbsy.dll" />
             </p:TypeAnnotation>
             <Patch Id="ARtAQ5Rip0oM2RSCLIs1L3">
-              <Canvas Id="TizO3muWkzxP3SsF5IaFCi" BordersChecked="false" CanvasType="Group" />
+              <Canvas Id="TizO3muWkzxP3SsF5IaFCi" CanvasType="Group" />
               <ProcessDefinition Id="DHBWome9OgSMa5jKmMYWLp" IsHidden="true" />
             </Patch>
           </Node>
@@ -42,7 +42,7 @@
 -->
           <Node Name="BezierSurface" Bounds="453,322" Id="KwAlhXMhm2KL4rS5aXC8e4">
             <p:NodeReference>
-              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
               <CategoryReference Kind="Category" Name="Primitive" />
             </p:NodeReference>
             <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
@@ -51,7 +51,7 @@
               <AssemblyReference ID="Nurbsy.dll" />
             </p:TypeAnnotation>
             <Patch Id="ODMDRt40ENSMlzmPoiX4y7">
-              <Canvas Id="HDUqQ9Fwrm0NDprlUBumya" BordersChecked="false" CanvasType="Group" />
+              <Canvas Id="HDUqQ9Fwrm0NDprlUBumya" CanvasType="Group" />
               <ProcessDefinition Id="Mlg5TmPjW4MPlQke1BFpIC" IsHidden="true" />
             </Patch>
           </Node>
@@ -62,7 +62,7 @@
 -->
           <Node Name="ControlPoint" Bounds="173,372" Id="DiuKXuqAoAGL8FxxajPuRX">
             <p:NodeReference>
-              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
               <CategoryReference Kind="Category" Name="Primitive" />
             </p:NodeReference>
             <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
@@ -71,7 +71,7 @@
               <AssemblyReference ID="Nurbsy.dll" />
             </p:TypeAnnotation>
             <Patch Id="V4QUt1up4FAPTVVYvYyCBu">
-              <Canvas Id="FTMH6mNlShWOixCHM1ZlqP" BordersChecked="false" CanvasType="Group" />
+              <Canvas Id="FTMH6mNlShWOixCHM1ZlqP" CanvasType="Group" />
               <ProcessDefinition Id="O2FoG6jOFVkNkK0QlAUJ8G" IsHidden="true" />
             </Patch>
           </Node>
@@ -80,9 +80,9 @@
     ************************ NurbsCurve ************************
 
 -->
-          <Node Name="NurbsCurve" Bounds="453,372" Id="DaibN0fypQdPukV2BIwIbl">
+          <Node Name="NurbsCurve" Bounds="663,320" Id="DaibN0fypQdPukV2BIwIbl">
             <p:NodeReference>
-              <Choice Kind="ForwardDefinition" Name="Forward" />
+              <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
               <CategoryReference Kind="Category" Name="Primitive" />
             </p:NodeReference>
             <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
@@ -91,8 +91,28 @@
               <AssemblyReference ID="Nurbsy.dll" />
             </p:TypeAnnotation>
             <Patch Id="FUX9JJiprpzOz8KU9kENeY">
-              <Canvas Id="PbLgLblcaxqP8OD4vpNFSs" BordersChecked="false" CanvasType="Group" />
+              <Canvas Id="PbLgLblcaxqP8OD4vpNFSs" CanvasType="Group" />
               <ProcessDefinition Id="FjSWHJows1dPge0Ug66dw7" IsHidden="true" />
+            </Patch>
+          </Node>
+          <!--
+
+    ************************ NurbsSurface ************************
+
+-->
+          <Node Name="NurbsSurface" Bounds="663,370" Id="PvUBsqntp3QMhLG5fYDrzD">
+            <p:NodeReference>
+              <Choice Kind="ForwardRecordDefinition" Name="Immutable Forward" />
+              <CategoryReference Kind="Category" Name="Primitive" />
+            </p:NodeReference>
+            <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="Nurbsy.dll">
+              <Choice Kind="TypeFlag" Name="NurbsSurface`1" />
+              <FullNameCategoryReference ID="Nurbsy" />
+              <AssemblyReference ID="Nurbsy.dll" />
+            </p:TypeAnnotation>
+            <Patch Id="UEXWb6SfY2tO5Hi1VJbhnx">
+              <Canvas Id="DTJbYg2heMKMZ5xdxxbPTG" CanvasType="Group" />
+              <ProcessDefinition Id="C28YohzkCBOQNwh8xPHel3" IsHidden="true" />
             </Patch>
           </Node>
         </Canvas>

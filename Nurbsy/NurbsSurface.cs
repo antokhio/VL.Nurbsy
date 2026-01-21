@@ -11,6 +11,7 @@
  * the LICENSE file.
  */
 
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Nurbsy.Helpers;
 using Stride.Core.Mathematics;
@@ -41,6 +42,27 @@ namespace Nurbsy
             KnotsU = knotsU;
             KnotsV = knotsV;
 
+            Check();
+        }
+
+        public NurbsSurface(
+            int degreeU,
+            int degreeV,
+            IReadOnlyList<IReadOnlyList<T>> controlPoints,
+            IReadOnlyList<double> knotsU,
+            IReadOnlyList<double> knotsV
+        )
+        {
+            DegreeU = degreeU;
+            DegreeV = degreeV;
+            ControlPoints = controlPoints
+                .Select(row =>
+                    (IReadOnlyList<ControlPoint<T>>)
+                        row.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray()
+                )
+                .ToImmutableArray();
+            KnotsU = knotsU;
+            KnotsV = knotsV;
             Check();
         }
 
@@ -78,7 +100,7 @@ namespace Nurbsy
             );
             Validate.Argument(
                 Validate.IsValidNURBS(DegreeU, ControlPoints.Count, KnotsU.Count),
-                nameof(ControlPoints),
+                nameof(KnotsU),
                 "Arguments must be fit: m = n + p + 1"
             );
 
@@ -86,7 +108,7 @@ namespace Nurbsy
             {
                 Validate.Argument(
                     Validate.IsValidNURBS(DegreeV, ControlPoints[0].Count, KnotsV.Count),
-                    nameof(ControlPoints),
+                    nameof(KnotsV),
                     "Arguments must be fit: m = n + p + 1"
                 );
             }

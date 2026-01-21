@@ -125,7 +125,7 @@ namespace Nurbsy
             );
             Validate.Argument(
                 Validate.IsValidNURBS(Degree, ControlPoints.Count, Knots.Count),
-                nameof(NurbsCurve<T>),
+                nameof(Knots),
                 "Arguments must be fit: m = n + p + 1"
             );
         }

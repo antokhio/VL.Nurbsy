@@ -7,7 +7,7 @@ namespace VL.Nurbsy
     /// Base class for managing <see cref="BezierSurface{T}"/> instance
     /// </summary>
     /// <typeparam name="T">Vector2, Vector3</typeparam>
-    [ProcessNode]
+    [ProcessNode(FragmentSelection = FragmentSelection.Explicit)]
     public abstract class BezierSurfaceNode<T>
         where T : struct
     {

@@ -6,6 +6,7 @@ using VL.Core.Import;
 
 namespace VL.Nurbsy
 {
+    [ProcessNode]
     public abstract class BezierCurveNodeXD<T> : BezierCurveNode<T>
         where T : struct
     {

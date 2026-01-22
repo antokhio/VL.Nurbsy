@@ -79,6 +79,10 @@ namespace VL.Nurbsy
 
         protected NurbsSurfaceNode(NurbsSurface<T> surface)
         {
+            // We populate only control poins here since
+            // they miss default value in abstract class
+            _controlPoints = surface.ControlPoints;
+
             Output = surface;
         }
 

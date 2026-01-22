@@ -36,8 +36,9 @@ namespace VL.Nurbsy
                 }
                 else
                 {
-                    DegreeU = degree.X;
-                    DegreeV = degree.Y;
+                    // TODO: Needs soft throw here
+                    DegreeU = Math.Max(1, degree.X);
+                    DegreeV = Math.Max(1, degree.Y);
                 }
 
                 _degree = degree;

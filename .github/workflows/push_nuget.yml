@@ -60,3 +60,4 @@ jobs:
           generateReleaseNotes: true
           allowUpdates: true
           prerelease: ${{ env.IS_PRERELEASE == 'True' }}
+          token: ${{ secrets.GITHUB_TOKEN }}

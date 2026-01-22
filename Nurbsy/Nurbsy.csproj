@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
-    <PackageReference Include="Stride.Core.Mathematics" Version="4.2.0.2293" />
+    <PackageReference Include="Stride.Core.Mathematics" Version="$(StrideVersion)" />
   </ItemGroup>
 </Project>

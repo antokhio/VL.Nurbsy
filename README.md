@@ -2,9 +2,9 @@
 
 A NURBS Bezier library for [vvvv](https://vvvv.org) and [Stride](https://github.com/stride3d/stride). Based on [LNLib](https://github.com/BIMCoderLiang/LNLib) by [BIMCoderLiang](https://github.com/BIMCoderLiang).
 
-⚠️ **This project is currently in active development** and may be subject to breaking changes, deprecations, and unstable features.
-
 This project is a C# port and adaptation of [LNLib](https://github.com/BIMCoderLiang/LNLib) by [BIMCoderLiang](https://github.com/BIMCoderLiang), bringing [The NURBS Book 2nd Edition](https://link.springer.com/book/10.1007/978-3-642-97385-7) algorithms to the native C# domain.
+
+⚠️ **This project is currently in active development** and may be subject to breaking changes, deprecations, and unstable features.
 
 ## Packages
 

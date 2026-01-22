@@ -55,6 +55,10 @@ namespace VL.Nurbsy
         [Fragment]
         protected NurbsCurveNode(NurbsCurve<T> curve)
         {
+            // We populate only control poins here since
+            // they miss default value in abstract class
+            _controlPoints = curve.ControlPoints;
+
             Output = curve;
         }
 

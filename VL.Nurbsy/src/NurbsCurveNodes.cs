@@ -25,7 +25,8 @@ namespace VL.Nurbsy
         {
             if (Degree != degree)
             {
-                Degree = degree;
+                // TODO: soft throw here
+                Degree = Math.Max(1, degree);
             }
         }
 
@@ -41,7 +42,7 @@ namespace VL.Nurbsy
     }
 
     [ProcessNode(Name = "NurbsCurve (2D)")]
-    public class NurbsCurve2DNode : NurbsCurveNodeXD<Vector2>
+    public class NurbsCurveNode2D : NurbsCurveNodeXD<Vector2>
     {
         static readonly IReadOnlyList<Vector2> DefaultControlPoints =
         [
@@ -51,7 +52,7 @@ namespace VL.Nurbsy
 
         private IReadOnlyList<Vector2> _controlPoints;
 
-        public NurbsCurve2DNode()
+        public NurbsCurveNode2D()
             : base(new(DefaultDegree, DefaultControlPoints, DefaultKnots)) { }
 
         public override void SetControlPoints(IReadOnlyList<Vector2> controlPoints)
@@ -67,7 +68,7 @@ namespace VL.Nurbsy
     }
 
     [ProcessNode(Name = "NurbsCurve (3D)")]
-    public class NurbsCurve3DNode : NurbsCurveNodeXD<Vector3>
+    public class NurbsCurveNode3D : NurbsCurveNodeXD<Vector3>
     {
         static readonly IReadOnlyList<Vector3> DefaultControlPoints =
         [
@@ -77,7 +78,7 @@ namespace VL.Nurbsy
 
         private IReadOnlyList<Vector3> _controlPoints;
 
-        public NurbsCurve3DNode()
+        public NurbsCurveNode3D()
             : base(new(DefaultDegree, DefaultControlPoints, DefaultKnots)) { }
 
         public override void SetControlPoints(IReadOnlyList<Vector3> controlPoints)

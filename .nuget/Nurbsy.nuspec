@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+  <metadata>
+    <id>Nurbsy</id>
+    <title>Nurbsy</title>
+    <version>0.0.0</version>
+    <authors>antokhio, BIMCoderLiang</authors>
+    <owners>antokhio</owners>
+    <projectUrl>https://github.com/antokhio/VL.Nurbsy</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary>NURBS Bezier library for vvvv and Stride, based on LNLib by BIMCoderLiang.</summary>
+    <description>Brings LNLib NURBS and Bezier algorithms to the native C# domain using Stride Mathematics.</description>
+    <tags>vl, vvvv, gamma, nurbs, stride, stride3d, skia</tags>
+    <readme>README.md</readme>
+	  <license type="file">LICENSE</license>
+	  <icon>icon\icon.png</icon>
+    <dependencies>
+      <group targetFramework=".net8.0">
+        <dependency id="Stride.Core.Mathematics" version="4.2.0.2293"/>
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\Nurbsy\lib\net8.0\**" target="lib\net8.0\" exclude="" />
+    <file src="..\icon.png" target="icon\" />
+    <file src="..\README.md" />
+    <file src="..\LICENSE" />
+  </files>
+</package>

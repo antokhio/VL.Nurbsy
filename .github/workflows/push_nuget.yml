@@ -1,0 +1,70 @@
+name: push_nuget
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs: 
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+  steps:
+    - name: Git Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: "8.x.x"
+
+    - name: Setup Nuget.exe
+      uses: nuget/setup-nuget@v1
+
+    - name: Build packages
+        run: |
+          dotnet build .\Nurbsy\Nurbsy.csproj --configuration Release --output .\Nurbsy\lib\net8.0
+          dotnet build .\VL.Nurbsy\src\VL.Nurbsy.csproj --configuration Release --output .\VL.Nurbsy\lib\net8.0\
+
+    - name: Extract version and detect pre-release
+      id: version
+      run: |
+        $version = "${{ github.ref_name }}"
+        $cleanVersion = $version.Substring(1)
+
+        $isPrerelease = $cleanVersion -match "[\-+]"
+
+        $prerelease = ""
+
+        if ($isPrerelease -eq "True"){
+            $prerelease = "--prerelease"
+        }
+
+        echo "VERSION=$cleanVersion" >> $env:GITHUB_ENV
+        echo "IS_PRERELEASE=$isPrerelease" >> $env:GITHUB_ENV
+        echo "PRERELEASE_STRING=$prerelease" >> $env:GITHUB_ENV          
+
+    - name: Pack packages
+      run: |
+        nuget pack .nuget\Nurbsy.nuspec -Version ${{ env.VERSION }} -OutputDirectory .\packages
+        nuget pack .nuget\VL.Nurbsy.nuspec -Version ${{ env.VERSION }} -OutputDirectory .\packages
+
+    - name: Publish to NuGet.org
+      run: |
+        Write-Host "Publishing to NuGet.org..."
+        foreach ($package in Get-ChildItem -Path ./packages -Filter *.nupkg) {
+          dotnet nuget push $package `
+            --api-key ${{ secrets.NUGET_KEY }} `
+            --source https://api.nuget.org/v3/index.json `
+            --skip-duplicate `
+            ${{ env.PRERELEASE_STRING}}
+        }
+
+    - name: Upload artifacts
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: packages/**
+        generateReleaseNotes: true
+        allowUpdates: true
+        prerelease: ${{ env.IS_PRERELEASE == 'True' }}        

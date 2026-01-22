@@ -22,7 +22,7 @@ namespace Nurbsy
         /// <summary>
         /// The degree of the Bezier curve, calculated as (ControlPoints.Count - 1).
         /// </summary>
-        public int Degree => ControlPoints.Count - 1;
+        public int Degree { get; }
 
         /// <summary>
         /// The control points defining the curve.
@@ -32,8 +32,9 @@ namespace Nurbsy
         /// <summary>
         /// Creates a Bezier curve from weighted control points.
         /// </summary>
-        public BezierCurve(IReadOnlyList<ControlPoint<T>> controlPoints)
+        public BezierCurve(int degree, IReadOnlyList<ControlPoint<T>> controlPoints)
         {
+            Degree = degree;
             ControlPoints = controlPoints;
             Check();
         }
@@ -41,8 +42,9 @@ namespace Nurbsy
         /// <summary>
         /// Creates a Bezier curve from unweighted points (weights set to 1.0).
         /// </summary>
-        public BezierCurve(IReadOnlyList<T> controlPoints)
+        public BezierCurve(int degree, IReadOnlyList<T> controlPoints)
         {
+            Degree = degree;
             ControlPoints = controlPoints.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray();
             Check();
         }

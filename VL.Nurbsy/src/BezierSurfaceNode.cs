@@ -1,52 +1,85 @@
 ﻿using Nurbsy;
-using Stride.Core.Mathematics;
 using VL.Core.Import;
 
 namespace VL.Nurbsy
 {
-    [ProcessNode()]
+    /// <summary>
+    /// Base class for managing <see cref="BezierSurface{T}"/> instance
+    /// </summary>
+    /// <typeparam name="T">Vector2, Vector3</typeparam>
+    [ProcessNode]
     public abstract class BezierSurfaceNode<T>
         where T : struct
     {
-        internal static readonly Int2 DefaultControlPointsCount = new(2, 2);
+        private IReadOnlyList<IReadOnlyList<ControlPoint<T>>> _controlPoints;
 
-        private IReadOnlyList<IReadOnlyList<T>> _controlPoints;
-        private Int2 _controlPointsCount = DefaultControlPointsCount;
+        // We calculate degree from control points if not set
+        private int? _degreeU;
+        private int? _degreeV;
+
         private bool _invalidate = false;
 
+        public IReadOnlyList<IReadOnlyList<ControlPoint<T>>> ControlPoints
+        {
+            get => _controlPoints;
+            protected set
+            {
+                _controlPoints = value;
+                Invalidate();
+            }
+        }
+
+        public int? DegreeU
+        {
+            get => _degreeU ?? Math.Max(1, _controlPoints.Count - 1);
+            protected set
+            {
+                _degreeU = value;
+                Invalidate();
+            }
+        }
+        public int? DegreeV
+        {
+            get => _degreeV ?? Math.Max(1, _controlPoints[0].Count - 1);
+            protected set
+            {
+                _degreeV = value;
+                Invalidate();
+            }
+        }
+
+        [Fragment]
         public BezierSurface<T> Output { get; protected set; }
 
         protected BezierSurfaceNode(BezierSurface<T> surface)
         {
+            // We populate only control poins here since
+            // they miss default value in abstract class
+            _controlPoints = surface.ControlPoints;
+
             Output = surface;
         }
 
-        public virtual void SetControlPoints(IReadOnlyList<IReadOnlyList<T>> controlPoints)
+        public void Invalidate()
         {
-            if (_controlPoints != controlPoints)
-            {
-                _controlPoints = controlPoints;
-
-                _invalidate = true;
-            }
+            _invalidate = true;
         }
 
-        public virtual void SetControlPointsCount(Int2 controlPointsCount)
+        public virtual void Build()
         {
-            if (_controlPointsCount != controlPointsCount)
-            {
-                _controlPointsCount = controlPointsCount;
+            // Resolve effective degrees
+            var degreeU = _degreeU ?? Math.Max(1, _controlPoints.Count - 1);
+            var degreeV = _degreeV ?? Math.Max(1, _controlPoints[0].Count - 1);
 
-                _invalidate = true;
-            }
+            Output = new BezierSurface<T>(degreeU, degreeV, _controlPoints);
         }
 
-        public virtual void Update()
+        [Fragment(Order = int.MaxValue)]
+        public void Update()
         {
             if (_invalidate)
             {
-                Output = new BezierSurface<T>(_controlPointsCount, _controlPoints);
-
+                Build();
                 _invalidate = false;
             }
         }

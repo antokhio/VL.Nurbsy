@@ -1,22 +1,19 @@
 ﻿using Nurbsy;
-using Nurbsy.Algorithm;
 using VL.Core.Import;
 
 namespace VL.Nurbsy
 {
     /// <summary>
-    /// Base class for managing <see cref="NurbsCurve{T}"/> instance
+    /// Base class for managing <see cref="BezierCurve{T}"/> instance
     /// </summary>
     /// <typeparam name="T">Vector2, Vector3</typeparam>
     [ProcessNode(FragmentSelection = FragmentSelection.Explicit)]
-    public abstract class NurbsCurveNode<T>
+    public abstract class BezierCurveNode<T>
         where T : struct
     {
-        protected const int DefaultDegree = 1;
-
         private IReadOnlyList<ControlPoint<T>> _controlPoints;
-        private int _degree = DefaultDegree;
-        private IReadOnlyList<double> _knots;
+
+        private int? _degree;
 
         private bool _invalidate = false;
 
@@ -30,9 +27,9 @@ namespace VL.Nurbsy
             }
         }
 
-        public int Degree
+        public int? Degree
         {
-            get => _degree;
+            get => _degree ?? Math.Max(1, _controlPoints.Count - 1);
             protected set
             {
                 _degree = value;
@@ -40,21 +37,10 @@ namespace VL.Nurbsy
             }
         }
 
-        public IReadOnlyList<double> Knots
-        {
-            get => _knots;
-            protected set
-            {
-                _knots = value;
-                Invalidate();
-            }
-        }
-
         [Fragment]
-        public NurbsCurve<T> Output { get; protected set; }
+        public BezierCurve<T> Output { get; protected set; }
 
-        [Fragment]
-        protected NurbsCurveNode(NurbsCurve<T> curve)
+        protected BezierCurveNode(BezierCurve<T> curve)
         {
             // We populate only control poins here since
             // they miss default value in abstract class
@@ -70,9 +56,10 @@ namespace VL.Nurbsy
 
         public virtual void Build()
         {
-            var knots = _knots ?? KnotsUtils.GenerateClampedKnots(_degree, _controlPoints.Count);
+            // Resolve effective degrees
+            var degree = _degree ?? Math.Max(1, _controlPoints.Count - 1);
 
-            Output = new NurbsCurve<T>(_degree, _controlPoints, knots);
+            Output = new BezierCurve<T>(degree, _controlPoints);
         }
 
         [Fragment(Order = int.MaxValue)]

@@ -5,15 +5,15 @@ using VL.Core.Import;
 namespace VL.Nurbsy
 {
     /// <summary>
-    /// Base class for managing NurbsSurface instance
+    /// Base class for managing <see cref="NurbsSurface{T}"/> instance
     /// </summary>
-    /// <typeparam name="T">Vector2 or Vector3</typeparam>
+    /// <typeparam name="T">Vector2, Vector3</typeparam>
     [ProcessNode(FragmentSelection = FragmentSelection.Explicit)]
     public abstract class NurbsSurfaceNode<T>
         where T : struct
     {
-        internal const int DefaultDegreeU = 1;
-        internal const int DefaultDegreeV = 1;
+        protected const int DefaultDegreeU = 1;
+        protected const int DefaultDegreeV = 1;
 
         private IReadOnlyList<IReadOnlyList<ControlPoint<T>>> _controlPoints;
 
@@ -79,6 +79,10 @@ namespace VL.Nurbsy
 
         protected NurbsSurfaceNode(NurbsSurface<T> surface)
         {
+            // We populate only control poins here since
+            // they miss default value in abstract class
+            _controlPoints = surface.ControlPoints;
+
             Output = surface;
         }
 

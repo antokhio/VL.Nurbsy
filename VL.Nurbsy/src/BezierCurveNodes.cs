@@ -1,59 +1,53 @@
 ﻿using System.Collections.Immutable;
 using Nurbsy;
 using Stride.Core.Mathematics;
+using VL.Core;
 using VL.Core.Import;
 
 namespace VL.Nurbsy
 {
-    /// <summary>
-    /// Additional base class for <see cref="NurbsCurveNode{T}"/>
-    /// that ressolves Int2 Degree and Knots
-    /// </summary>
-    /// <typeparam name="T">Vector2, Vector3</typeparam>
     [ProcessNode]
-    public abstract class NurbsCurveNodeXD<T> : NurbsCurveNode<T>
+    public abstract class BezierCurveNodeXD<T> : BezierCurveNode<T>
         where T : struct
     {
-        protected static readonly IReadOnlyList<double> DefaultKnots = [0.0, 0.0, 1.0, 1.0];
+        protected static readonly int DefaultDegree = 1;
 
-        protected NurbsCurveNodeXD(NurbsCurve<T> curve)
+        private Optional<int> _degree;
+
+        protected BezierCurveNodeXD(BezierCurve<T> curve)
             : base(curve) { }
 
         public abstract void SetControlPoints(IReadOnlyList<T> controlPoints);
 
-        public void SetDegree(int degree = DefaultDegree)
+        public void SetDegree(Optional<int> degree)
         {
-            if (Degree != degree)
+            if (_degree != degree)
             {
-                // TODO: soft throw here
-                Degree = Math.Max(1, degree);
-            }
-        }
-
-        public void SetKnots(
-            [Pin(Visibility = Model.PinVisibility.Optional)] IReadOnlyList<double> knots
-        )
-        {
-            if (knots != Knots)
-            {
-                Knots = knots;
+                if (degree.HasValue)
+                {
+                    Degree = Math.Max(1, degree.Value);
+                }
+                else
+                {
+                    Degree = null;
+                }
+                _degree = degree;
             }
         }
     }
 
-    [ProcessNode(Name = "NurbsCurve (2D)")]
-    public class NurbsCurveNode2D : NurbsCurveNodeXD<Vector2>
+    [ProcessNode(Name = "BezierCurve (2D)")]
+    public class BezierCurveNode2D : BezierCurveNodeXD<Vector2>
     {
         protected static readonly IReadOnlyList<Vector2> DefaultControlPoints =
         [
             new(-0.5f, 0f),
             new(0.5f, 0f),
         ];
-
         private IReadOnlyList<Vector2> _controlPoints;
 
-        public NurbsCurveNode2D()
-            : base(new(DefaultDegree, DefaultControlPoints, DefaultKnots)) { }
+        public BezierCurveNode2D()
+            : base(new(DefaultDegree, DefaultControlPoints)) { }
 
         public override void SetControlPoints(IReadOnlyList<Vector2> controlPoints)
         {
@@ -67,19 +61,18 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "NurbsCurve (3D)")]
-    public class NurbsCurveNode3D : NurbsCurveNodeXD<Vector3>
+    [ProcessNode(Name = "BezierCurve (3D)")]
+    public class BezierCurveNode3D : BezierCurveNodeXD<Vector3>
     {
         protected static readonly IReadOnlyList<Vector3> DefaultControlPoints =
         [
             new(-0.5f, 0f, 0f),
             new(0.5f, 0f, 0f),
         ];
-
         private IReadOnlyList<Vector3> _controlPoints;
 
-        public NurbsCurveNode3D()
-            : base(new(DefaultDegree, DefaultControlPoints, DefaultKnots)) { }
+        public BezierCurveNode3D()
+            : base(new(DefaultDegree, DefaultControlPoints)) { }
 
         public override void SetControlPoints(IReadOnlyList<Vector3> controlPoints)
         {
@@ -87,7 +80,6 @@ namespace VL.Nurbsy
             {
                 var cps = controlPoints?.Any() ?? false ? controlPoints : DefaultControlPoints;
                 ControlPoints = cps.Select(cp => new ControlPoint<Vector3>(cp)).ToImmutableArray();
-
                 _controlPoints = controlPoints;
             }
         }

@@ -1,14 +1,53 @@
 ﻿using System.Collections.Immutable;
 using Nurbsy;
 using Stride.Core.Mathematics;
+using VL.Core;
 using VL.Core.Import;
 
 namespace VL.Nurbsy
 {
-    [ProcessNode(Name = "BezierSurface (2D)")]
-    public class BezierSurfaceNode2D : BezierSurfaceNode<Vector2>
+    /// <summary>
+    /// Additional base class for <see cref="BezierSurfaceNode{T}"/>
+    /// that ressolves Int2 Degree
+    /// </summary>
+    /// <typeparam name="T">Vector2, Vector3</typeparam>
+    [ProcessNode]
+    public abstract class BezierSurfaceNodeXD<T> : BezierSurfaceNode<T>
+        where T : struct
     {
-        internal static readonly IReadOnlyList<IReadOnlyList<Vector2>> DefaultControlPoints =
+        protected static readonly Int2 DefaultDegree = new(1, 1);
+
+        private Optional<Int2> _degree;
+
+        protected BezierSurfaceNodeXD(BezierSurface<T> surface)
+            : base(surface) { }
+
+        public abstract void SetControlPoints(IReadOnlyList<IReadOnlyList<T>> controlPoints);
+
+        public void SetDegree(Optional<Int2> degree)
+        {
+            if (_degree != degree)
+            {
+                if (degree.HasValue)
+                {
+                    DegreeU = Math.Max(1, degree.Value.X);
+                    DegreeV = Math.Max(1, degree.Value.Y);
+                }
+                else
+                {
+                    DegreeU = null;
+                    DegreeV = null;
+                }
+
+                _degree = degree;
+            }
+        }
+    }
+
+    [ProcessNode(Name = "BezierSurface (2D)")]
+    public class BezierSurfaceNode2D : BezierSurfaceNodeXD<Vector2>
+    {
+        protected static readonly IReadOnlyList<IReadOnlyList<Vector2>> DefaultControlPoints =
         [
             [new(-0.5f, 0.5f), new(0.5f, 0.5f)],
             [new(-0.5f, -0.5f), new(0.5f, -0.5f)],
@@ -17,16 +56,13 @@ namespace VL.Nurbsy
         private IReadOnlyList<IReadOnlyList<Vector2>> _controlPoints;
 
         public BezierSurfaceNode2D()
-            : base(new(DefaultDegreeU, DefaultDegreeV, DefaultControlPoints)) { }
+            : base(new(DefaultDegree.X, DefaultDegree.Y, DefaultControlPoints)) { }
 
-        public void SetControlPoints(IReadOnlyList<IReadOnlyList<Vector2>> controlPoints)
+        public override void SetControlPoints(IReadOnlyList<IReadOnlyList<Vector2>> controlPoints)
         {
-            if (controlPoints != _controlPoints)
+            if (_controlPoints != controlPoints)
             {
                 var cps = controlPoints?.Any() ?? false ? controlPoints : DefaultControlPoints;
-
-                DegreeU = cps.Count - 1;
-                DegreeV = cps[0].Count - 1;
 
                 ControlPoints = cps.Select(row =>
                         (IReadOnlyList<ControlPoint<Vector2>>)
@@ -40,9 +76,9 @@ namespace VL.Nurbsy
     }
 
     [ProcessNode(Name = "BezierSurface (3D)")]
-    public class BezierSurfaceNode3D : BezierSurfaceNode<Vector3>
+    public class BezierSurfaceNode3D : BezierSurfaceNodeXD<Vector3>
     {
-        internal static readonly IReadOnlyList<IReadOnlyList<Vector3>> DefaultControlPoints =
+        protected static readonly IReadOnlyList<IReadOnlyList<Vector3>> DefaultControlPoints =
         [
             [new(-0.5f, 0.5f, 0f), new(0.5f, 0.5f, 0f)],
             [new(-0.5f, -0.5f, 0f), new(0.5f, -0.5f, 0f)],
@@ -51,16 +87,13 @@ namespace VL.Nurbsy
         private IReadOnlyList<IReadOnlyList<Vector3>> _controlPoints;
 
         public BezierSurfaceNode3D()
-            : base(new(DefaultDegreeU, DefaultDegreeV, DefaultControlPoints)) { }
+            : base(new(DefaultDegree.X, DefaultDegree.Y, DefaultControlPoints)) { }
 
-        public void SetControlPoints(IReadOnlyList<IReadOnlyList<Vector3>> controlPoints)
+        public override void SetControlPoints(IReadOnlyList<IReadOnlyList<Vector3>> controlPoints)
         {
-            if (controlPoints != _controlPoints)
+            if (_controlPoints != controlPoints)
             {
                 var cps = controlPoints?.Any() ?? false ? controlPoints : DefaultControlPoints;
-
-                var degreeU = cps.Count + 1;
-                var degreeV = cps[0].Count + 1;
 
                 ControlPoints = cps.Select(row =>
                         (IReadOnlyList<ControlPoint<Vector3>>)

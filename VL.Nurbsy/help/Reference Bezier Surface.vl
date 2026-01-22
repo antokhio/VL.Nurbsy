@@ -72,6 +72,7 @@
             </p:NodeReference>
             <Pin Id="LszroaOxQetNTHvyPmCP3f" Name="Control Points" Kind="InputPin" />
             <Pin Id="DExsPejGsfVLIhWZV4WPxx" Name="Output" Kind="OutputPin" />
+            <Pin Id="VQIra0NraYSLivptYWw0fl" Name="Degree" Kind="InputPin" />
             <Pin Id="TaMUTyYEDJzMSuu3c2YNhH" Name="Update" Kind="InputPin" />
           </Node>
           <!--

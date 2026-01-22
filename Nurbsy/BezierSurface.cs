@@ -56,21 +56,6 @@ namespace Nurbsy
             Check();
         }
 
-        public BezierSurface(Int2 controlPointsCount, IReadOnlyList<IReadOnlyList<T>> controlPoints)
-        {
-            DegreeU = controlPointsCount.X - 1;
-            DegreeV = controlPointsCount.Y - 1;
-
-            ControlPoints = controlPoints
-                .Select(row =>
-                    (IReadOnlyList<ControlPoint<T>>)
-                        row.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray()
-                )
-                .ToImmutableArray();
-
-            Check();
-        }
-
         public void Check()
         {
             var degreeU = DegreeU;

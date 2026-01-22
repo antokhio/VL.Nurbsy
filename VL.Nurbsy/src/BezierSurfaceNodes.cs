@@ -96,8 +96,8 @@ namespace VL.Nurbsy
                 var cps = controlPoints?.Any() ?? false ? controlPoints : DefaultControlPoints;
 
                 ControlPoints = cps.Select(row =>
-                        (IReadOnlyList<ControlPoint<Vector2>>)
-                            row.Select(cp => new ControlPoint<Vector2>(cp)).ToImmutableArray()
+                        (IReadOnlyList<ControlPoint<Vector3>>)
+                            row.Select(cp => new ControlPoint<Vector3>(cp)).ToImmutableArray()
                     )
                     .ToImmutableArray();
 

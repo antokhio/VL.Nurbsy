@@ -43,11 +43,14 @@ namespace Nurbsy
         /// Creates a Bezier curve from unweighted points (weights set to 1.0).
         /// </summary>
         public BezierCurve(int degree, IReadOnlyList<T> controlPoints)
-        {
-            Degree = degree;
-            ControlPoints = controlPoints.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray();
-            Check();
-        }
+            : this(degree, controlPoints.Select(cp => new ControlPoint<T>(cp)).ToImmutableArray())
+        { }
+
+        /// <summary>
+        /// Creates a Bezier curve from unweighted points (weights set to 1.0).
+        /// </summary>
+        public BezierCurve(IReadOnlyList<ControlPoint<T>> controlPoints)
+            : this(controlPoints.Count - 1, controlPoints) { }
 
         public void Check()
         {

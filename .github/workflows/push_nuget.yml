@@ -35,15 +35,8 @@ jobs:
 
           $isPrerelease = $cleanVersion -match "[\-+]"
 
-          $prerelease = ""
-
-          if ($isPrerelease -eq "True"){
-              $prerelease = "--prerelease"
-          }
-
           echo "VERSION=$cleanVersion" >> $env:GITHUB_ENV
           echo "IS_PRERELEASE=$isPrerelease" >> $env:GITHUB_ENV
-          echo "PRERELEASE_STRING=$prerelease" >> $env:GITHUB_ENV          
 
       - name: Pack packages
         run: |
@@ -57,8 +50,7 @@ jobs:
             dotnet nuget push $package `
               --api-key ${{ secrets.NUGET_KEY }} `
               --source https://api.nuget.org/v3/index.json `
-              --skip-duplicate `
-              ${{ env.PRERELEASE_STRING}}
+              --skip-duplicate
           }
 
       - name: Upload artifacts

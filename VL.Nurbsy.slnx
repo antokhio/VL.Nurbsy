@@ -1,10 +1,10 @@
 <Solution>
   <Folder Name="/Solution Items/">
-    <File Path=".github/workflows/push_nuget.yml" />
     <File Path=".nuget/Nurbsy.nuspec" />
     <File Path=".nuget/VL.Nurbsy.nuspec" />
     <File Path="LICENSE" />
     <File Path="NOTICE" />
+    <File Path="README.MD" />
   </Folder>
   <Folder Name="/Solution Items/.nuget/">
     <File Path=".nuget/Nurbsy.nuspec" />

@@ -13,6 +13,7 @@
   <Folder Name="/Solution Items/workflows/">
     <File Path=".github/workflows/push_nuget.yml" />
   </Folder>
+  <Project Path="Nurbsy.Rendering/Nurbsy.Rendering.csproj" />
   <Project Path="Nurbsy/Nurbsy.csproj" />
   <Project Path="VL.Nurbsy/src/VL.Nurbsy.csproj" />
 </Solution>

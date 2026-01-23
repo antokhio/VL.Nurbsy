@@ -1,0 +1,39 @@
+﻿namespace Nurbsy.Algorithm
+{
+    public static class Triangulation
+    {
+        public static int[] GenerateCCWGrid(int tesselationX, int tesselationY)
+        {
+            int count = (tesselationX - 1) * (tesselationY - 1) * 6;
+
+            int[] indices = GC.AllocateUninitializedArray<int>(count);
+
+            int index = 0;
+            for (int y = 0; y < tesselationY - 1; y++)
+            {
+                int rowOffset = y * tesselationX;
+                int nextRowOffset = (y + 1) * tesselationX;
+
+                for (int x = 0; x < tesselationX - 1; x++)
+                {
+                    var bl = rowOffset + x; // Bottom-Left
+                    var br = rowOffset + x + 1; // Bottom-Right
+                    var tl = nextRowOffset + x; // Top-Left
+                    var tr = nextRowOffset + x + 1; // Top-Right
+
+                    // Triangle 1: Bottom-Left -> Bottom-Right -> Top-Left (CCW)
+                    indices[index++] = bl;
+                    indices[index++] = br;
+                    indices[index++] = tl;
+
+                    // Triangle 2: Bottom-Right -> Top-Right -> Top-Left (CCW)
+                    indices[index++] = br;
+                    indices[index++] = tr;
+                    indices[index++] = tl;
+                }
+            }
+
+            return indices;
+        }
+    }
+}

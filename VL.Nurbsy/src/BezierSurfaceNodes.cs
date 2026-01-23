@@ -56,7 +56,7 @@ namespace VL.Nurbsy
         private IReadOnlyList<IReadOnlyList<Vector2>> _controlPoints;
 
         public BezierSurfaceNode2D()
-            : base(new(DefaultDegree.X, DefaultDegree.Y, DefaultControlPoints)) { }
+            : base(BezierSurfaceNode2D.CreateDefault()) { }
 
         public override void SetControlPoints(IReadOnlyList<IReadOnlyList<Vector2>> controlPoints)
         {
@@ -73,6 +73,9 @@ namespace VL.Nurbsy
                 _controlPoints = controlPoints;
             }
         }
+
+        public static BezierSurface<Vector2> CreateDefault() =>
+            new(DefaultDegree.X, DefaultDegree.Y, DefaultControlPoints);
     }
 
     [ProcessNode(Name = "BezierSurface (3D)")]

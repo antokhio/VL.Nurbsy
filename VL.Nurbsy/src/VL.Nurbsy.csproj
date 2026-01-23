@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="VL.Core" Version="$(VLVersion)" />
+    <PackageReference Include="VL.Stride.Runtime" Version="$(VLVersion)" />
     <PackageReference Include="Stride.Graphics" Version="$(StrideVersion)" />
     <PackageReference Include="Stride.Rendering" Version="$(StrideVersion)" />
   </ItemGroup>

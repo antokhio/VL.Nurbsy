@@ -19,14 +19,14 @@ namespace Nurbsy.Rendering.Helpers
 
             var vertices = GC.AllocateUninitializedArray<VertexPositionNormalTexture>(tX * tY);
 
-            for (int y = 0; y < tY; y++)
+            for (int j = 0; j < tY; j++)
             {
-                for (int x = 0; x < tX; x++)
+                for (int i = 0; i < tX; i++)
                 {
-                    var u = x / (float)(tX - 1);
-                    var v = y / (float)(tY - 1);
+                    var u = i / (float)(tX - 1);
+                    var v = j / (float)(tY - 1);
                     var point = surface.GetPointOnSurface(new Vector2(u, v));
-                    vertices[y * tX + x] = new VertexPositionNormalTexture
+                    vertices[j * tX + i] = new VertexPositionNormalTexture
                     {
                         Position = new Vector3(point, 0),
                         Normal = Vector3.UnitZ,
@@ -49,10 +49,11 @@ namespace Nurbsy.Rendering.Helpers
         /// </summary>
         public static GeometricMeshData<VertexPositionNormalTexture> GenerateMeshData(
             BezierSurface<Vector3> surface,
-            Int2 tesselation,
-            float eps = 1e-4f
+            Int2 tesselation
         )
         {
+            float eps = Constants.DistanceEpsilon;
+
             var tX = Math.Max(2, tesselation.X);
             var tY = Math.Max(2, tesselation.Y);
 

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Reactive.Disposables;
 using Nurbsy;
+using Nurbsy.Rendering;
 using Stride.Core.Mathematics;
 using Stride.Rendering;
 using VL.Core;
@@ -13,20 +14,20 @@ using StrideModel = Stride.Rendering.Model;
 namespace VL.Nurbsy
 {
     [ProcessNode]
-    public abstract class BezierSurfaceMeshNode<T> : IDisposable
+    public abstract class NurbsSurfaceMeshNode<T> : IDisposable
         where T : struct
     {
         protected static readonly Int2 DefaultTesselation = new Int2(32, 32);
         protected const string DefaultTesselationValue = "32, 32";
 
-        private BezierSurface<T> _surface;
+        private NurbsSurface<T> _surface;
         private Int2 _tesselation = DefaultTesselation;
 
         public Mesh Output { get; protected set; }
 
         private readonly SerialDisposable _meshDisposable = new();
 
-        protected BezierSurfaceMeshNode(BezierSurface<T> surface)
+        protected NurbsSurfaceMeshNode(NurbsSurface<T> surface)
         {
             _surface = surface;
             Generate();
@@ -47,7 +48,7 @@ namespace VL.Nurbsy
                     return gameProvider.Bind(game =>
                     {
                         var model = new StrideModel();
-                        var generator = new BezierSurfaceModel<T>(surface, tessellation);
+                        var generator = new NurbsSurfaceModel<T>(surface, tessellation);
 
                         generator.Generate(game.Services, model);
 
@@ -77,7 +78,7 @@ namespace VL.Nurbsy
             Output = meshHandle.Resource;
         }
 
-        public virtual void SetSurface(BezierSurface<T> surface)
+        public virtual void SetSurface(NurbsSurface<T> surface)
         {
             if (_surface != surface)
             {

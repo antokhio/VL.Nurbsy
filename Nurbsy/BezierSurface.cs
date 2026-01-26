@@ -94,7 +94,6 @@ namespace Nurbsy
         ///    .
         ///  [n][0]  [n][1] ... ...  [n][m]
         ///
-        /// Rational Bezier Surface:Use XYZW
         /// </summary>
         public T GetPointOnSurfaceByDeCasteljau(Vector2 uv)
         {

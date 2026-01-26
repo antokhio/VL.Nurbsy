@@ -107,5 +107,8 @@ namespace VL.Nurbsy
                 _controlPoints = controlPoints;
             }
         }
+
+        public static BezierSurface<Vector3> CreateDefault() =>
+            new(DefaultDegree.X, DefaultDegree.Y, DefaultControlPoints);
     }
 }

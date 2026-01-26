@@ -2,10 +2,9 @@
 {
     public static class Triangulation
     {
-        public static int[] GenerateCCWGrid(int tesselationX, int tesselationY)
+        public static int[] GenerateGridIndeciesCW(int tesselationX, int tesselationY)
         {
             int count = (tesselationX - 1) * (tesselationY - 1) * 6;
-
             int[] indices = GC.AllocateUninitializedArray<int>(count);
 
             int index = 0;
@@ -21,18 +20,17 @@
                     var tl = nextRowOffset + x; // Top-Left
                     var tr = nextRowOffset + x + 1; // Top-Right
 
-                    // Triangle 1: Bottom-Left -> Bottom-Right -> Top-Left (CCW)
+                    // Triangle 1: Bottom-Left -> Top-Left -> Bottom-Right (CW)
                     indices[index++] = bl;
-                    indices[index++] = br;
                     indices[index++] = tl;
+                    indices[index++] = br;
 
-                    // Triangle 2: Bottom-Right -> Top-Right -> Top-Left (CCW)
+                    // Triangle 2: Bottom-Right -> Top-Left -> Top-Right (CW)
                     indices[index++] = br;
-                    indices[index++] = tr;
                     indices[index++] = tl;
+                    indices[index++] = tr;
                 }
             }
-
             return indices;
         }
     }

@@ -28,13 +28,14 @@ namespace VL.Nurbsy.Stride
             {
                 var surfaceT = Surface;
                 var surface = Unsafe.As<BezierSurface<T>, BezierSurface<Vector2>>(ref surfaceT);
-                return BezierSurfaceModelFactory.Create(surface, Tesselation);
+                return BezierSurfaceModelFactory.GenerateMeshData(surface, Tesselation);
             }
 
             if (typeof(T) == typeof(Vector3))
             {
-                //var surface = Unsafe.As<BezierSurface<T>, BezierSurface<Vector3>>(ref _surface);
-                //return BezierSurfaceModelFactory.Create(surface, Tesselation);
+                var surfaceT = Surface;
+                var surface = Unsafe.As<BezierSurface<T>, BezierSurface<Vector3>>(ref surfaceT);
+                return BezierSurfaceModelFactory.GenerateMeshData(surface, Tesselation);
             }
 
             throw new NotSupportedException($"Type {typeof(T).Name} is not supported.");

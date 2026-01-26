@@ -91,5 +91,8 @@ namespace VL.Nurbsy
                 _controlPoints = controlPoints;
             }
         }
+
+        public static NurbsCurve<Vector3> CreateDefault() =>
+            new(DefaultDegree, DefaultControlPoints, DefaultKnots);
     }
 }

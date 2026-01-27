@@ -97,6 +97,19 @@ namespace Nurbsy
             );
         }
 
+        public T GetPointOnCurve(
+            double paramT,
+            BezierEvaluation method = BezierEvaluation.Bernstein
+        )
+        {
+            return method switch
+            {
+                BezierEvaluation.Bernstein => GetPointOnCurveByBernstein(paramT),
+                BezierEvaluation.DeCasteljau => GetPointOnCurveByDeCasteljau(paramT),
+                _ => throw new ArgumentOutOfRangeException(nameof(method)),
+            };
+        }
+
         public T GetPointOnCurveByBernstein(double paramT)
         {
             Validate.Range(paramT, 0.0, 1.0, nameof(paramT));

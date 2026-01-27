@@ -89,4 +89,22 @@ namespace Nurbsy
         TillerAndHanson = 0,
         PieglAndTiller = 1,
     }
+
+    /// <summary>
+    /// Specifies the algorithm used to evaluate a point on a Bézier curve at parameter t.
+    /// </summary>
+    public enum BezierEvaluation
+    {
+        /// <summary>
+        /// Evaluates the curve using the explicit Bernstein polynomial definition (Weighted Sum).
+        /// Faster execution, may lose precision with very high-degree curves due to large binomial coefficients.
+        /// </summary>
+        Bernstein,
+
+        /// <summary>
+        /// Evaluates the curve using De Casteljau's algorithm (Recursive Linear Interpolation).
+        /// Slower execution. Numerically most stable method.
+        /// </summary>
+        DeCasteljau,
+    }
 }

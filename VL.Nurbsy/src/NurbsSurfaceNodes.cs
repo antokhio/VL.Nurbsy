@@ -103,6 +103,17 @@ namespace VL.Nurbsy
                 _controlPoints = controlPoints;
             }
         }
+
+        public static NurbsSurface<Vector2> CreateDefault()
+        {
+            return new NurbsSurface<Vector2>(
+                DefaultDegreeU,
+                DefaultDegreeV,
+                DefaultControlPoints,
+                DefaultKnotsU,
+                DefaultKnotsV
+            );
+        }
     }
 
     [ProcessNode(Name = "NurbsSurface (3D)")]
@@ -140,6 +151,17 @@ namespace VL.Nurbsy
 
                 _controlPoints = controlPoints;
             }
+        }
+
+        public static NurbsSurface<Vector3> CreateDefault()
+        {
+            return new NurbsSurface<Vector3>(
+                DefaultDegreeU,
+                DefaultDegreeV,
+                DefaultControlPoints,
+                DefaultKnotsU,
+                DefaultKnotsV
+            );
         }
     }
 }

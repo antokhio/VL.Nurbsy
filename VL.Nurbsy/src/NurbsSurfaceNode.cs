@@ -86,12 +86,12 @@ namespace VL.Nurbsy
             Output = surface;
         }
 
-        public void Invalidate()
+        protected void Invalidate()
         {
             _invalidate = true;
         }
 
-        public virtual void Build()
+        protected virtual void Build()
         {
             var knotsU = _knotsU ?? KnotsUtils.GenerateClampedKnots(_degreeU, _controlPoints.Count);
             var knotsV =

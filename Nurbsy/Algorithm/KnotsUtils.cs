@@ -209,5 +209,56 @@ namespace Nurbsy.Algorithm
             }
             return unique;
         }
+
+        public static void GetInsertionKnots(
+            IReadOnlyList<double> knots1,
+            IReadOnlyList<double> knots2,
+            out List<double> insert1,
+            out List<double> insert2
+        )
+        {
+            insert1 = new List<double>();
+            insert2 = new List<double>();
+
+            // Collect all unique knot values from both vectors
+            var allKnots = knots1.Concat(knots2).OrderBy(x => x).ToList();
+            var uniqueKnots = new List<double>();
+
+            if (allKnots.Count > 0)
+            {
+                uniqueKnots.Add(allKnots[0]);
+                for (int i = 1; i < allKnots.Count; i++)
+                {
+                    if (!MathUtils.IsAlmostEqualTo(allKnots[i], uniqueKnots[uniqueKnots.Count - 1]))
+                    {
+                        uniqueKnots.Add(allKnots[i]);
+                    }
+                }
+            }
+
+            // Determine how many times we need to insert each unique knot to unify multiplicity
+            foreach (var u in uniqueKnots)
+            {
+                int count1 = CountKnots(knots1, u);
+                int count2 = CountKnots(knots2, u);
+                int max = Math.Max(count1, count2);
+
+                for (int i = 0; i < max - count1; i++)
+                    insert1.Add(u);
+                for (int i = 0; i < max - count2; i++)
+                    insert2.Add(u);
+            }
+        }
+
+        private static int CountKnots(IReadOnlyList<double> knots, double val)
+        {
+            int count = 0;
+            foreach (var k in knots)
+            {
+                if (MathUtils.IsAlmostEqualTo(k, val))
+                    count++;
+            }
+            return count;
+        }
     }
 }

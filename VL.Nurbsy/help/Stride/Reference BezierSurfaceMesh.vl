@@ -49,8 +49,8 @@
             </p:TypeAnnotation>
             <p:Value>
               <Item>
-                <Item>-0.7, 0.5, 0</Item>
-                <Item>0.16, 0.28, -0.65</Item>
+                <Item>-0.83, 0.5, 0</Item>
+                <Item>0.18, 0.87, -0.65</Item>
                 <Item>0.5, 0.5, 0</Item>
               </Item>
               <Item>
@@ -127,8 +127,9 @@
             <Pin Id="A9QAifN91glPLm98xOoM3D" Name="Surface" Kind="InputPin" />
             <Pin Id="QtLQT5jDJOLMGQb8YMXYaH" Name="Tessellation" Kind="InputPin" />
             <Pin Id="Ou0H2Bc0srnNQcmLEH0fnH" Name="Output" Kind="OutputPin" />
+            <Pin Id="LZSblbnrluRNruPdZe05rZ" Name="Update" Kind="InputPin" />
           </Node>
-          <Pad Id="UeR8UgNxmSJM6NsUioxC60" Comment="Tessellation" Bounds="504,499,35,28" ShowValueBox="true" isIOBox="true" Value="64, 64">
+          <Pad Id="UeR8UgNxmSJM6NsUioxC60" Comment="Tessellation" Bounds="456,500,35,28" ShowValueBox="true" isIOBox="true" Value="64, 64">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Int2" />
             </p:TypeAnnotation>
@@ -152,7 +153,7 @@
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
               <Choice Kind="ProcessAppFlag" Name="SceneWindow" />
             </p:NodeReference>
-            <Pin Id="IqIu5tRXT1oMD9tCyBXu7J" Name="Bounds" Kind="InputPin" DefaultValue="2549, -751, 3840, 2066" IsHidden="true" />
+            <Pin Id="IqIu5tRXT1oMD9tCyBXu7J" Name="Bounds" Kind="InputPin" DefaultValue="1419, 57, 1060, 990" IsHidden="true" />
             <Pin Id="I8iwMZwERqTLgxrbvSEHdK" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="JYp6YEFuM4sPjhXOTkc6NL" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="AuwRIHJUsMdLZDKkxBfc77" Name="Save Bounds" Kind="InputPin" IsHidden="true" />

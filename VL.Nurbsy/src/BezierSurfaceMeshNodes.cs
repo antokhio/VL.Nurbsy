@@ -1,6 +1,9 @@
 ﻿using Nurbsy;
 using Stride.Core.Mathematics;
+using Stride.Rendering.ProceduralModels;
 using VL.Core.Import;
+using VL.Nurbsy.Helpers;
+using VL.Nurbsy.Rendering;
 
 namespace VL.Nurbsy
 {
@@ -9,14 +12,19 @@ namespace VL.Nurbsy
     /// Excludes normals computation.
     /// </summary>
     [ProcessNode(Name = "BezierSurfaceMesh (2D)")]
-    public class BezierSurfaceMeshNode2D : BezierSurfaceMeshNode<Vector2>
+    public class BezierSurfaceMeshNode2D : SurfaceMeshNode<BezierSurface<Vector2>>
     {
         public BezierSurfaceMeshNode2D()
             : base(BezierSurfaceNode2D.CreateDefault()) { }
 
-        public override void SetSurface(BezierSurface<Vector2> surface)
+        protected override IProceduralModel Build()
         {
-            base.SetSurface(surface);
+            return new BezierSurfaceModel<Vector2>(Surface, Tesselation);
+        }
+
+        protected override object GetResourceKey()
+        {
+            return (GetGameProvider(), typeof(BezierSurfaceModel<Vector2>), Surface, Tesselation);
         }
     }
 
@@ -25,14 +33,19 @@ namespace VL.Nurbsy
     /// Includes normals computation.
     /// </summary>
     [ProcessNode(Name = "BezierSurfaceMesh (3D)")]
-    public class BezierSurfaceMeshNode3D : BezierSurfaceMeshNode<Vector3>
+    public class BezierSurfaceMeshNode3D : SurfaceMeshNode<BezierSurface<Vector3>>
     {
         public BezierSurfaceMeshNode3D()
             : base(BezierSurfaceNode3D.CreateDefault()) { }
 
-        public override void SetSurface(BezierSurface<Vector3> surface)
+        protected override IProceduralModel Build()
         {
-            base.SetSurface(surface);
+            return new BezierSurfaceModel<Vector3>(Surface, Tesselation);
+        }
+
+        protected override object GetResourceKey()
+        {
+            return (GetGameProvider(), typeof(BezierSurfaceModel<Vector3>), Surface, Tesselation);
         }
     }
 }

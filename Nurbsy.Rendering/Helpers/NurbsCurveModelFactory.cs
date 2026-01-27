@@ -237,22 +237,20 @@ namespace Nurbsy.Rendering.Helpers
                 };
             }
 
-            // 3. Indices (Triangle Fan)
+            // 3. Indices (Triangle CCW)
             for (int j = 0; j < segments; j++)
             {
                 if (isStart)
                 {
-                    // Clockwise winding for start cap (looking against tangent)
                     indices[iOffset++] = centerIndex;
-                    indices[iOffset++] = rimStartIndex + j + 1;
                     indices[iOffset++] = rimStartIndex + j;
+                    indices[iOffset++] = rimStartIndex + j + 1;
                 }
                 else
                 {
-                    // Counter-Clockwise for end cap (looking with tangent)
                     indices[iOffset++] = centerIndex;
-                    indices[iOffset++] = rimStartIndex + j;
                     indices[iOffset++] = rimStartIndex + j + 1;
+                    indices[iOffset++] = rimStartIndex + j;
                 }
             }
         }

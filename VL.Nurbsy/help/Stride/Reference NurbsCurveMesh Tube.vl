@@ -97,7 +97,7 @@
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
               <Choice Kind="ProcessAppFlag" Name="SceneWindow" />
             </p:NodeReference>
-            <Pin Id="IqIu5tRXT1oMD9tCyBXu7J" Name="Bounds" Kind="InputPin" DefaultValue="-2568, -8, 2560, 1377" IsHidden="true" />
+            <Pin Id="IqIu5tRXT1oMD9tCyBXu7J" Name="Bounds" Kind="InputPin" DefaultValue="-8, -8, 2560, 1377" IsHidden="true" />
             <Pin Id="I8iwMZwERqTLgxrbvSEHdK" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="JYp6YEFuM4sPjhXOTkc6NL" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="AuwRIHJUsMdLZDKkxBfc77" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
@@ -302,7 +302,7 @@
             </p:NodeReference>
             <Pin Id="UAO8AZsrtBLLfTaaMn6PvV" Name="Node Context" Kind="InputPin" IsHidden="true" />
             <Pin Id="KdrT5JYkBNWLBfVI2BWtbu" Name="Center" Kind="InputPin" />
-            <Pin Id="PkrKdRstYisNAyHqJekm4D" Name="Size" Kind="InputPin" DefaultValue="29.29, 29.29, 29.29" />
+            <Pin Id="PkrKdRstYisNAyHqJekm4D" Name="Size" Kind="InputPin" DefaultValue="3.86, 3.86, 3.86" />
             <Pin Id="EEaUsWCmLUVLgRWf24juXF" Name="Seed" Kind="InputPin" DefaultValue="33" />
             <Pin Id="TWE53IwduqNNBVcvdxzHLr" Name="Count" Kind="InputPin" DefaultValue="24" />
             <Pin Id="TRzLgOxXm4MPPoV5kIerik" Name="Output" Kind="OutputPin" />
@@ -310,20 +310,21 @@
           <Node Bounds="406,550,94,19" Id="UPAg5celRbAMBIGd9f5hbu">
             <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="NurbsCurveMesh (3D)" />
+              <CategoryReference Kind="Category" Name="Nurbsy" />
+              <Choice Kind="ProcessAppFlag" Name="NurbsCurveMesh (3D Tube)" />
             </p:NodeReference>
-            <Pin Id="H8nNCSJ42HpNPD22VK0y7j" Name="Curve" Kind="InputPin" />
-            <Pin Id="LdpJmjebKB8Mc5ubWZMDXw" Name="Radius" Kind="InputPin" />
+            <Pin Id="HyV9f5fgtrWQUWFsDCMy3f" Name="Curve" Kind="InputPin" />
+            <Pin Id="RKkEFgeBqnSLQCP71owKOT" Name="Radius" Kind="InputPin" DefaultValue="0.06" />
             <Pin Id="DJcZvZi6tAjQGceINGkLdU" Name="Tessellation" Kind="InputPin" DefaultValue="32" />
-            <Pin Id="IzbHoR59A62PzDpFtHJatW" Name="Segments" Kind="InputPin" />
             <Pin Id="Ixtf5qZ90mbNT9LmOcXpA5" Name="Output" Kind="OutputPin" />
+            <Pin Id="HuBQoHfuhdbLXlhhFv6keL" Name="Segments" Kind="InputPin" DefaultValue="12" />
           </Node>
           <Pad Id="T6cuYQGn2FYMrTVAl0jupv" Comment="Degree" Bounds="440,450,35,15" ShowValueBox="true" isIOBox="true" Value="4">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="Mu2vDkKSMFNOWfi1j1WSxj" Comment="Tessellation" Bounds="530,520,35,15" ShowValueBox="true" isIOBox="true" Value="1024">
+          <Pad Id="Mu2vDkKSMFNOWfi1j1WSxj" Comment="Tessellation" Bounds="467,520,35,15" ShowValueBox="true" isIOBox="true" Value="1024">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
@@ -350,12 +351,12 @@
         <Link Id="EQBEJQ492GeM65fhGoZ7jE" Ids="M4SBp8v3qyRNNyruhIPLtw,T8vACFNWoK4QbD5Txu0Nnx" />
         <Link Id="JrAsnLxfWSbPltEPf6GLW6" Ids="KDZItqNH0s1PPI3gfKczqc,LgbcZP8GjTuNwXa9qpHcLb" />
         <Link Id="SUA6kmca8ZWOB1gqCryPMN" Ids="TRzLgOxXm4MPPoV5kIerik,R0rOxmmoMOSLj6MWkjIVb2" />
-        <Link Id="HRhC1ZiBF5rMEno2yUlSl6" Ids="CZeNG3RKbQhPoU6SP7JHyJ,H8nNCSJ42HpNPD22VK0y7j" />
         <Link Id="FjNqgs6qr06Pi1bBm9MCtX" Ids="Ixtf5qZ90mbNT9LmOcXpA5,EYgtom0wRe5MOG9kUsyHtL" />
         <Link Id="QrTwyk7E6YBMM2vh4grDkx" Ids="T6cuYQGn2FYMrTVAl0jupv,NNmLBvD95BFLzxZrzNnlb5" />
         <Link Id="PAfkzHPC1n9PBhTtUHVNLi" Ids="TRzLgOxXm4MPPoV5kIerik,PTtPY6eddKqMGPEIBeClrh" />
         <Link Id="FXpVUd7yI6aNLSkvoq95Pr" Ids="PTtPY6eddKqMGPEIBeClrh,OIsjlLyyZgtORnT1J0a8tE" />
-        <Link Id="E0BodMcrVoYQWDl9fttrmd" Ids="Mu2vDkKSMFNOWfi1j1WSxj,DJcZvZi6tAjQGceINGkLdU" />
+        <Link Id="AriVKgnZb6oLICVE42zFvg" Ids="CZeNG3RKbQhPoU6SP7JHyJ,HyV9f5fgtrWQUWFsDCMy3f" />
+        <Link Id="K6DQgenfgIkPH0YdKhXst5" Ids="Mu2vDkKSMFNOWfi1j1WSxj,DJcZvZi6tAjQGceINGkLdU" />
       </Patch>
     </Node>
   </Patch>

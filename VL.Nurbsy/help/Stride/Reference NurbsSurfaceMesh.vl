@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Document xmlns:p="property" xmlns:r="reflection" Id="PDYyOcypHy0QKqfBpS40ZJ" LanguageVersion="2025.7.1-0137-g9913e5c752" Version="0.128">
+<Document xmlns:p="property" xmlns:r="reflection" Id="KShbxuzTzksQHeQwW78Qvk" LanguageVersion="2025.7.1-0137-g9913e5c752" Version="0.128">
   <NugetDependency Id="DdpK8Sfs9xtMC8VgCGyEYI" Location="VL.CoreLib" Version="2025.7.1-0137-g9913e5c752" />
   <Patch Id="JSTs1jrVXYtMbebtzKVYNI">
     <Canvas Id="GZ8CmIQdPSbMBYTjwukCff" DefaultCategory="Main" BordersChecked="false" CanvasType="FullCategory" />
@@ -106,7 +106,7 @@
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
               <Choice Kind="ProcessAppFlag" Name="SceneWindow" />
             </p:NodeReference>
-            <Pin Id="IqIu5tRXT1oMD9tCyBXu7J" Name="Bounds" Kind="InputPin" DefaultValue="-2568, -8, 2560, 1377" IsHidden="true" />
+            <Pin Id="IqIu5tRXT1oMD9tCyBXu7J" Name="Bounds" Kind="InputPin" DefaultValue="2560, -740, 1898, 2044" IsHidden="true" />
             <Pin Id="I8iwMZwERqTLgxrbvSEHdK" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="JYp6YEFuM4sPjhXOTkc6NL" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="AuwRIHJUsMdLZDKkxBfc77" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
@@ -276,14 +276,14 @@
             <Pin Id="T8vACFNWoK4QbD5Txu0Nnx" Name="Input" Kind="InputPin" />
             <Pin Id="KDZItqNH0s1PPI3gfKczqc" Name="Result" Kind="OutputPin" />
           </Node>
-          <Node Bounds="826,42,85,19" Id="FmsxQYHwsAoOlnSueobDB8">
+          <Node Bounds="826,-20,85,19" Id="FmsxQYHwsAoOlnSueobDB8">
             <p:NodeReference LastCategoryFullName="Collections.Spread" LastDependency="VL.CoreLib.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
               <Choice Kind="ProcessAppFlag" Name="LinearSpread" />
             </p:NodeReference>
             <Pin Id="CoOJ0BzzXcpLnKmariK8pG" Name="Node Context" Kind="InputPin" IsHidden="true" />
             <Pin Id="Moz5KWBH7JRLPp3yjONOLj" Name="Center" Kind="InputPin" />
-            <Pin Id="DlrY5aQCXpSQQysHtvXK6j" Name="Width" Kind="InputPin" DefaultValue="14.09" />
+            <Pin Id="DlrY5aQCXpSQQysHtvXK6j" Name="Width" Kind="InputPin" DefaultValue="-14" />
             <Pin Id="IIF8vOiAQkzNkspYXheH1i" Name="Alignment" Kind="InputPin" DefaultValue="Block" />
             <Pin Id="I6K93anIQDePZ8Oc97hGRA" Name="Phase" Kind="InputPin" />
             <Pin Id="G3BrYddVxCGNcvTYEJ5vt5" Name="Count" Kind="InputPin" DefaultValue="3" />
@@ -357,32 +357,6 @@
           <Pad Id="U1Co0BZpZ0nPRGJ8nYFLtm" Comment="Count" Bounds="1011,-289,35,15" ShowValueBox="true" isIOBox="true" Value="24">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
-            </p:TypeAnnotation>
-          </Pad>
-          <Node Bounds="406,450,77,19" Id="FZ7eWmi2prLPYOUysPKczg">
-            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
-              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="NurbsSurface (3D)" />
-            </p:NodeReference>
-            <Pin Id="D1lixrb3V6VPjReO7Wtf7E" Name="Control Points" Kind="InputPin" />
-            <Pin Id="E8pZNa55JknNqLIrOeEb26" Name="Degree" Kind="InputPin" />
-            <Pin Id="Qqb8nxKSTiKP73FTCg52L4" Name="Knots U" Kind="InputPin" IsHidden="true" />
-            <Pin Id="PxrsET4uB8PNa5zehBXnPH" Name="Knots V" Kind="InputPin" IsHidden="true" />
-            <Pin Id="NCmwbEFOsF9NaJvIJX701h" Name="Update" Kind="ApplyPin" />
-            <Pin Id="E6lVMwbfDxkOuxY5B8t11N" Name="Output" Kind="OutputPin" />
-          </Node>
-          <Node Bounds="406,540,101,19" Id="Jo6KMoHcZFaNFKxxzGsK2q">
-            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
-              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="NurbsSurfaceMesh (3D)" />
-            </p:NodeReference>
-            <Pin Id="VpTVRQD0pJfNn235vxCQI0" Name="Surface" Kind="InputPin" />
-            <Pin Id="UlLT0xVrbSuOouQUx4PaT8" Name="Tessellation" Kind="InputPin" />
-            <Pin Id="DZbRLrWI7aUOAhPCJnAroe" Name="Output" Kind="OutputPin" />
-          </Node>
-          <Pad Id="PTGMeCQUBCvMTY64LNpzkx" Comment="Degree" Bounds="444,360,35,28" ShowValueBox="true" isIOBox="true" Value="3, 3">
-            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-              <Choice Kind="TypeFlag" Name="Int2" />
             </p:TypeAnnotation>
           </Pad>
           <Node Bounds="1196,-80,85,19" Id="AOt5fvHFscsNpvP19I1Rl2">
@@ -504,11 +478,6 @@
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="SL1GMNopoY9Qb40I7TsHRh" Comment="Tessellation" Bounds="504,510,35,28" ShowValueBox="true" isIOBox="true" Value="64, 64">
-            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-              <Choice Kind="TypeFlag" Name="Int2" />
-            </p:TypeAnnotation>
-          </Pad>
           <Pad Id="EMCBkeEjTIeOjP8cs78nFm" Comment="Width" Bounds="972,-10,35,28" ShowValueBox="true" isIOBox="true" Value="6, 1">
             <p:TypeAnnotation LastCategoryFullName="2D" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Vector2" />
@@ -528,6 +497,53 @@
             <Pin Id="DOdT6SJiDxgPusB6tE4Rx1" Name="Phase" Kind="OutputPin" />
             <Pin Id="QunjZem5cugMw7u0l2CQh8" Name="On New Cycle" Kind="OutputPin" />
             <Pin Id="SwbyYir8oIlLEF6sqrYlFl" Name="Cycles" Kind="OutputPin" />
+          </Node>
+          <Pad Id="HDOVJxrWvtNOFPQXM5JXpn" Comment="" Bounds="648,41,92,181" ShowValueBox="true" isIOBox="true" />
+          <Pad Id="CiEPS0gxbxFQJlVrVpPQMb" Bounds="573,-2,188,19" ShowValueBox="true" isIOBox="true" Value="Order should be top to bottom">
+            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
+              <Choice Kind="TypeFlag" Name="String" />
+            </p:TypeAnnotation>
+            <p:ValueBoxSettings>
+              <p:fontsize p:Type="Int32">9</p:fontsize>
+              <p:stringtype p:Assembly="VL.Core" p:Type="VL.Core.StringType">Comment</p:stringtype>
+            </p:ValueBoxSettings>
+          </Pad>
+          <Node Bounds="406,490,77,19" Id="UjoUNlp8SK8OWlxlSuvg6J">
+            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
+              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+              <Choice Kind="ProcessAppFlag" Name="NurbsSurface (3D)" />
+            </p:NodeReference>
+            <Pin Id="VJk2AaTZ0uyObHuhdn67Ii" Name="Control Points" Kind="InputPin" />
+            <Pin Id="BkRdXCfFMqnLMo2ybRTBFY" Name="Degree" Kind="InputPin" />
+            <Pin Id="ScsslGQq7AqNAgSSAtGgrD" Name="Knots U" Kind="InputPin" IsHidden="true" />
+            <Pin Id="MA25EulZvFKL8hGHbgZZov" Name="Knots V" Kind="InputPin" IsHidden="true" />
+            <Pin Id="ASSjsX10siJQG6rXVibmnM" Name="Update" Kind="ApplyPin" />
+            <Pin Id="BUK55j8IQI0MOff4e3u6uS" Name="Output" Kind="OutputPin" />
+          </Node>
+          <Node Bounds="406,560,101,19" Id="MWn8dj0xycgN4n1l3wK1rm">
+            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
+              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+              <Choice Kind="ProcessAppFlag" Name="NurbsSurfaceMesh (3D)" />
+            </p:NodeReference>
+            <Pin Id="JS6L3Pg4HbBNEDSBRKYS9O" Name="Surface" Kind="InputPin" />
+            <Pin Id="Mbi81zFzV7PLJux0oYugbA" Name="Tessellation" Kind="InputPin" />
+            <Pin Id="Pl2ro7yfIHnOqpoOlRtrai" Name="Output" Kind="OutputPin" />
+            <Pin Id="SsYCSLDNzKjONSvi3W7Sbv" Name="Update" Kind="ApplyPin" />
+          </Node>
+          <Pad Id="Os6XYYgeuAGLyiCxV4sTVB" Comment="Tessellation" Bounds="456,520,35,28" ShowValueBox="true" isIOBox="true" Value="32, 32">
+            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
+              <Choice Kind="TypeFlag" Name="Int2" />
+            </p:TypeAnnotation>
+          </Pad>
+          <Node Bounds="292,591,133,19" Id="JIBhM6HmeeLMAbzSnrdMTc">
+            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy.Helpers" LastDependency="VL.Nurbsy.vl">
+              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+              <Choice Kind="ProcessAppFlag" Name="NurbsSurface3DMeshTest" />
+            </p:NodeReference>
+            <Pin Id="GZKinHnDafhNsiM1AhotLM" Name="Surface" Kind="InputPin" />
+            <Pin Id="McjRL9u3LV9P5MhFA1AUwF" Name="Tessellation" Kind="InputPin" />
+            <Pin Id="TgtDrLPvGLrQHgquVbIZGm" Name="Update" Kind="ApplyPin" />
+            <Pin Id="OeansN2XUaeMXzpj61SQ8e" Name="Output" Kind="OutputPin" />
           </Node>
         </Canvas>
         <Patch Id="MzjIGlZtuzxO27nT9gNG6o" Name="Create" />
@@ -560,11 +576,7 @@
         <Link Id="LTezfoWJk7TOkzhLRFns1o" Ids="CX6hIkrtereLLvvNymNiBK,OCL9cs1v2CcLapLk7lvO9d" />
         <Link Id="VA6lyhh3fCXP5OOacYoRVY" Ids="Be0jVikYobZNkKqbeAtOCo,FHzWg7lBMNEMwezbxiqwiB" />
         <Link Id="IfZJhKQMtrDOciY0exYQj1" Ids="FHzWg7lBMNEMwezbxiqwiB,LgJpb89W9SSNAdErP4Acuv" />
-        <Link Id="UmVDuZjt8brO7LVlBJF92s" Ids="LgJpb89W9SSNAdErP4Acuv,D1lixrb3V6VPjReO7Wtf7E" />
         <Link Id="U8WnRZUE4wKMF3y50HYrYJ" Ids="LgJpb89W9SSNAdErP4Acuv,BdCHt3pFcrfQbsCYtdswh5" />
-        <Link Id="R0UD42zPUKWPxkSPsISOJU" Ids="E6lVMwbfDxkOuxY5B8t11N,VpTVRQD0pJfNn235vxCQI0" />
-        <Link Id="ATCV6388mPUMNxy8RCIJj6" Ids="DZbRLrWI7aUOAhPCJnAroe,EYgtom0wRe5MOG9kUsyHtL" />
-        <Link Id="PrGokhU1EsTOSAloVtb8yP" Ids="PTGMeCQUBCvMTY64LNpzkx,E8pZNa55JknNqLIrOeEb26" />
         <Link Id="Ih418EsO2Q5L6pNJDc6ItJ" Ids="VUSaUDSMx2QM83sydU3Wdp,VjEslN9M67NLnV9kxGytBn" />
         <Link Id="CmRclLzIdpULAwbutNBU3Y" Ids="KBVkxungtbaNz8VxccR7Hb,AnesHNbvpuqOUl9JU1X8bl" />
         <Link Id="O9MTLohSZRENef1dblnvti" Ids="ORvU4aP7pkZMdipBVNbdkW,Qu7a1K5qEQfQABmc3wJ9Dk" />
@@ -576,7 +588,6 @@
         <Link Id="KNMXzvR5vQBPq0CwAbJSUh" Ids="Eqasmqe25ILPUsypcMisTq,HLnjUTuLZZzLwPyDS3jdDW" />
         <Link Id="OUqlYX2I0wYP9osDX3TC67" Ids="PKaziV0oXOoPRTFCzdUBuA,G3BrYddVxCGNcvTYEJ5vt5" />
         <Link Id="QjR3eyXNWdaN5QhgAeafko" Ids="PKaziV0oXOoPRTFCzdUBuA,J33zrNNXx46QDmnRRWe6Ss" />
-        <Link Id="Dng46EyA0FnO3Y0RHT0KdT" Ids="SL1GMNopoY9Qb40I7TsHRh,UlLT0xVrbSuOouQUx4PaT8" />
         <Link Id="EDGnMlit3T0PR1N12yUCWg" Ids="EMCBkeEjTIeOjP8cs78nFm,V6Th30H9Dg6PSY1J71TCkz" />
         <Link Id="Mn0ksFYIHW5PXpo3KB0Ws3" Ids="QyFvgOdVGd9OgwigmBudRP,FF3ni2kMaPkPtG0H2azsXq" />
         <Link Id="RgKlJ3McRiAPwrGxhZm3Su" Ids="ToxM10qzexoOXKExnyChpw,LDrfBd8dfsvPSRngbRlBke" />
@@ -584,6 +595,10 @@
         <Link Id="RncC3xGk38JNlwazhucHR7" Ids="DOdT6SJiDxgPusB6tE4Rx1,Sqc9seNGZGJPkp26J73Keq" />
         <Link Id="DBkYLrsbKwyP15kSUBDGuH" Ids="E0w74f77mdqOQqgjbB0KhV,MFeU4ElQjWbP65rMutWpnY" />
         <Link Id="Anvffj0hV9QLwm5fFeaWAC" Ids="RNY3LesSN3SOOFtvSPA4oF,PIa8lIe21QnQCR37peXWL9" />
+        <Link Id="GxvtVHlIShOQM6lwqBZgPt" Ids="GsBADjiGb8CMaq6uaEFSOH,HDOVJxrWvtNOFPQXM5JXpn" />
+        <Link Id="MjRKVDGCh8JO104OEDFmBl" Ids="BUK55j8IQI0MOff4e3u6uS,JS6L3Pg4HbBNEDSBRKYS9O" />
+        <Link Id="OZQ4XSdlresLkkxq4qrc6f" Ids="Os6XYYgeuAGLyiCxV4sTVB,Mbi81zFzV7PLJux0oYugbA" />
+        <Link Id="TEaLbRhP0weOCRsKA6f0my" Ids="Pl2ro7yfIHnOqpoOlRtrai,EYgtom0wRe5MOG9kUsyHtL" />
       </Patch>
     </Node>
   </Patch>

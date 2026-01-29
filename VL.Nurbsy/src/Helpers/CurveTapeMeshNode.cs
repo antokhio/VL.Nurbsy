@@ -1,24 +1,23 @@
-﻿using VL.Core.Import;
+﻿using System.ComponentModel;
+using Stride.Core.Mathematics;
+using VL.Core.Import;
 
 namespace VL.Nurbsy.Helpers
 {
-    /// <summary>
-    /// Base class for curve tube mesh generation.
-    /// Currently: uniform tesselation.
-    /// </summary>
     [ProcessNode]
-    public abstract class CurveTubeMeshNode<TCurve> : MeshNode
+    public abstract class CurveTapeMeshNode<TCurve> : MeshNode
     {
-        protected const float DefaultRadius = 0.1f;
+        protected const float DefaultWidth = 0.1f;
         protected const int DefaultTesselation = 32;
-        protected const int DefultSegments = 12;
+        protected static readonly Vector3 DefaultDirection = Vector3.UnitZ;
+        protected const string DefaultDirectionValue = "0, 0, 1";
 
         protected TCurve Curve;
-        protected float Radius = DefaultRadius;
+        protected float Width = DefaultWidth;
         protected int Tesselation = DefaultTesselation;
-        protected int Segments = DefultSegments;
+        protected Vector3 Direction = DefaultDirection;
 
-        protected CurveTubeMeshNode(TCurve curve)
+        protected CurveTapeMeshNode(TCurve curve)
         {
             Curve = curve;
 
@@ -30,16 +29,15 @@ namespace VL.Nurbsy.Helpers
             if (!EqualityComparer<TCurve>.Default.Equals(Curve, curve))
             {
                 Curve = curve;
-
                 Generate();
             }
         }
 
-        public void SetRadius(float radius = DefaultRadius)
+        public void SetWidth(float width = DefaultWidth)
         {
-            if (Radius != radius)
+            if (Width != width)
             {
-                Radius = radius;
+                Width = width;
                 Generate();
             }
         }
@@ -53,11 +51,11 @@ namespace VL.Nurbsy.Helpers
             }
         }
 
-        public void SetSegments(int segments = DefultSegments)
+        public void SetDirection([DefaultValue(DefaultDirectionValue)] Vector3 direction)
         {
-            if (Segments != segments)
+            if (Direction != direction)
             {
-                Segments = segments;
+                Direction = direction;
                 Generate();
             }
         }

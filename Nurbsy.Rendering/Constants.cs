@@ -1,4 +1,4 @@
-﻿namespace Nurbsy.Rendering.Helpers
+﻿namespace Nurbsy.Rendering
 {
     internal struct Constants
     {

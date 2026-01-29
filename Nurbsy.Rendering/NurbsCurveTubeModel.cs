@@ -6,7 +6,7 @@ using Stride.Rendering.ProceduralModels;
 
 namespace Nurbsy.Rendering
 {
-    public class NurbsCurveModel<T> : PrimitiveProceduralModelBase
+    public class NurbsCurveTubeModel<T> : PrimitiveProceduralModelBase
         where T : struct
     {
         public NurbsCurve<T> Curve { get; set; }
@@ -15,7 +15,7 @@ namespace Nurbsy.Rendering
         public int Segemnts { get; set; }
         public TubeCapping Capping { get; set; }
 
-        public NurbsCurveModel(
+        public NurbsCurveTubeModel(
             NurbsCurve<T> nurbsCurve,
             float radius,
             int tesselation,
@@ -41,7 +41,7 @@ namespace Nurbsy.Rendering
             {
                 var curveT = Curve;
                 var curve = Unsafe.As<NurbsCurve<T>, NurbsCurve<Vector3>>(ref curveT);
-                return NurbsCurveModelFactory.GenerateCappedTube(
+                return NurbsCurveTubeModelFactory.GenerateCappedTube(
                     curve,
                     Radius,
                     Tesslation,

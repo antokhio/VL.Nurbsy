@@ -3,7 +3,7 @@ using Stride.Graphics;
 
 namespace Nurbsy.Rendering.Helpers
 {
-    public static class NurbsCurveModelFactory
+    public static class NurbsCurveTubeModelFactory
     {
         /// <summary>
         /// Generates a 3D tube mesh around a NURBS curve with flat caps.

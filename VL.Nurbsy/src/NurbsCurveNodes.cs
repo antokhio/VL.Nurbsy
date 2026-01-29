@@ -65,6 +65,9 @@ namespace VL.Nurbsy
                 _controlPoints = controlPoints;
             }
         }
+
+        public static NurbsCurve<Vector2> CreateDefault() =>
+            new(DefaultDegree, DefaultControlPoints, DefaultKnots);
     }
 
     [ProcessNode(Name = "NurbsCurve (3D)")]

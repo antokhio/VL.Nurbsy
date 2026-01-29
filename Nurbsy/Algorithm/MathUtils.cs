@@ -13,6 +13,7 @@
  */
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Stride.Core.Mathematics;
 
 namespace Nurbsy.Algorithm
@@ -274,6 +275,25 @@ namespace Nurbsy.Algorithm
                 }
             }
             return result;
+        }
+
+        internal static double Distance<T>(T a, T b)
+        {
+            if (typeof(T) == typeof(Vector3))
+            {
+                var a3 = Unsafe.As<T, Vector3>(ref a);
+                var b3 = Unsafe.As<T, Vector3>(ref b);
+
+                return Vector3.Distance(a3, b3);
+            }
+            if (typeof(T) == typeof(Vector2))
+            {
+                var a2 = Unsafe.As<T, Vector2>(ref a);
+                var b2 = Unsafe.As<T, Vector2>(ref b);
+
+                return Vector2.Distance(a2, b2);
+            }
+            return 0.0;
         }
     }
 }

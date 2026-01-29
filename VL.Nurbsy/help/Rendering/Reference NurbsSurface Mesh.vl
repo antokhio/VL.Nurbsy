@@ -424,7 +424,7 @@
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="EMCBkeEjTIeOjP8cs78nFm" Comment="Width" Bounds="972,-10,35,28" ShowValueBox="true" isIOBox="true" Value="6, 1">
+          <Pad Id="EMCBkeEjTIeOjP8cs78nFm" Comment="Width" Bounds="972,-10,35,28" ShowValueBox="true" isIOBox="true" Value="1, 1">
             <p:TypeAnnotation LastCategoryFullName="2D" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Vector2" />
             </p:TypeAnnotation>
@@ -483,16 +483,11 @@
               <Choice Kind="TypeFlag" Name="Int2" />
             </p:TypeAnnotation>
           </Pad>
-          <Node Bounds="292,591,133,19" Id="JIBhM6HmeeLMAbzSnrdMTc">
-            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy.Helpers" LastDependency="VL.Nurbsy.vl">
-              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="NurbsSurface3DMeshTest" />
-            </p:NodeReference>
-            <Pin Id="GZKinHnDafhNsiM1AhotLM" Name="Surface" Kind="InputPin" />
-            <Pin Id="McjRL9u3LV9P5MhFA1AUwF" Name="Tessellation" Kind="InputPin" />
-            <Pin Id="TgtDrLPvGLrQHgquVbIZGm" Name="Update" Kind="ApplyPin" />
-            <Pin Id="OeansN2XUaeMXzpj61SQ8e" Name="Output" Kind="OutputPin" />
-          </Node>
+          <Pad Id="EKOjjxrPtJMOsERsoLSxVf" Comment="Degree" Bounds="444,420,35,28" ShowValueBox="true" isIOBox="true" Value="3, 3">
+            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
+              <Choice Kind="TypeFlag" Name="Int2" />
+            </p:TypeAnnotation>
+          </Pad>
         </Canvas>
         <Patch Id="MzjIGlZtuzxO27nT9gNG6o" Name="Create" />
         <Patch Id="RAWgTV6Fgl0PlQgvlOsN3I" Name="Update" />
@@ -542,6 +537,8 @@
         <Link Id="MjRKVDGCh8JO104OEDFmBl" Ids="BUK55j8IQI0MOff4e3u6uS,JS6L3Pg4HbBNEDSBRKYS9O" />
         <Link Id="OZQ4XSdlresLkkxq4qrc6f" Ids="Os6XYYgeuAGLyiCxV4sTVB,Mbi81zFzV7PLJux0oYugbA" />
         <Link Id="TEaLbRhP0weOCRsKA6f0my" Ids="Pl2ro7yfIHnOqpoOlRtrai,EYgtom0wRe5MOG9kUsyHtL" />
+        <Link Id="PwYuRFisEonMtpxo3ta8AD" Ids="LgJpb89W9SSNAdErP4Acuv,VJk2AaTZ0uyObHuhdn67Ii" />
+        <Link Id="HJ0Dc2ZCawFPcj5pcQ0M8n" Ids="EKOjjxrPtJMOsERsoLSxVf,BkRdXCfFMqnLMo2ybRTBFY" />
       </Patch>
     </Node>
   </Patch>

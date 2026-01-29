@@ -44,7 +44,7 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "BezierSurface (2D)")]
+    [ProcessNode(Name = "BezierSurface (2d)")]
     public class BezierSurfaceNode2D : BezierSurfaceNodeXD<Vector2>
     {
         protected static readonly IReadOnlyList<IReadOnlyList<Vector2>> DefaultControlPoints =
@@ -78,7 +78,7 @@ namespace VL.Nurbsy
             new(DefaultDegree.X, DefaultDegree.Y, DefaultControlPoints);
     }
 
-    [ProcessNode(Name = "BezierSurface (3D)")]
+    [ProcessNode(Name = "BezierSurface (3d)")]
     public class BezierSurfaceNode3D : BezierSurfaceNodeXD<Vector3>
     {
         protected static readonly IReadOnlyList<IReadOnlyList<Vector3>> DefaultControlPoints =

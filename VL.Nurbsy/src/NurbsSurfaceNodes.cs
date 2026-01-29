@@ -68,7 +68,7 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "NurbsSurface (2D)")]
+    [ProcessNode(Name = "NurbsSurface (2d)")]
     public class NurbsSurfaceNode2D : NurbsSurfaceXDNode<Vector2>
     {
         protected static readonly IReadOnlyList<IReadOnlyList<Vector2>> DefaultControlPoints =
@@ -118,7 +118,7 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "NurbsSurface (3D)")]
+    [ProcessNode(Name = "NurbsSurface (3d)")]
     public class NurbsSurfaceNode3D : NurbsSurfaceXDNode<Vector3>
     {
         protected static readonly IReadOnlyList<IReadOnlyList<Vector3>> DefaultControlPoints =

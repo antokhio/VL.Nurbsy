@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Document xmlns:p="property" xmlns:r="reflection" Id="PDYyOcypHy0QKqfBpS40ZJ" LanguageVersion="2025.7.1-0137-g9913e5c752" Version="0.128">
+<Document xmlns:p="property" xmlns:r="reflection" Id="BFk5OfumHSCPHMlCF1GV6S" LanguageVersion="2025.7.1-0137-g9913e5c752" Version="0.128">
   <NugetDependency Id="DdpK8Sfs9xtMC8VgCGyEYI" Location="VL.CoreLib" Version="2025.7.1-0137-g9913e5c752" />
   <Patch Id="JSTs1jrVXYtMbebtzKVYNI">
     <Canvas Id="GZ8CmIQdPSbMBYTjwukCff" DefaultCategory="Main" BordersChecked="false" CanvasType="FullCategory" />
@@ -68,7 +68,8 @@
           <Node Bounds="485,429,77,19" Id="BoXhn4XxXf8OpIPj0XLK7N">
             <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="BezierSurface (2D)" />
+              <CategoryReference Kind="Category" Name="Nurbsy" />
+              <Choice Kind="ProcessAppFlag" Name="BezierSurface (2d)" />
             </p:NodeReference>
             <Pin Id="LszroaOxQetNTHvyPmCP3f" Name="Control Points" Kind="InputPin" />
             <Pin Id="DExsPejGsfVLIhWZV4WPxx" Name="Output" Kind="OutputPin" />
@@ -650,9 +651,11 @@
             </p:TypeAnnotation>
           </Pad>
           <Node Bounds="1174,520,101,19" Id="RAcDrpT8niEPpa0H5W20gL">
-            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
+            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy.Rendering" LastDependency="VL.Nurbsy.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="BezierSurfaceMesh (2D)" />
+              <CategoryReference Kind="Category" Name="Nurbsy" />
+              <CategoryReference Kind="Category" Name="Rendering" />
+              <Choice Kind="ProcessAppFlag" Name="BezierSurface (2d Mesh)" />
             </p:NodeReference>
             <Pin Id="A9QAifN91glPLm98xOoM3D" Name="Surface" Kind="InputPin" />
             <Pin Id="QtLQT5jDJOLMGQb8YMXYaH" Name="Tessellation" Kind="InputPin" />

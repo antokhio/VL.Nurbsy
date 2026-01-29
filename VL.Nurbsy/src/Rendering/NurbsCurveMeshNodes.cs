@@ -5,9 +5,9 @@ using Stride.Rendering.ProceduralModels;
 using VL.Core.Import;
 using VL.Nurbsy.Helpers;
 
-namespace VL.Nurbsy
+namespace VL.Nurbsy.Rendering
 {
-    [ProcessNode(Name = "NurbsCurveMesh (3D Tube)")]
+    [ProcessNode(Name = "NurbsCurve (3d Mesh Tube)")]
     public class NurbsCurveTubeMeshNode3D : CurveTubeMeshNode<NurbsCurve<Vector3>>
     {
         public NurbsCurveTubeMeshNode3D()
@@ -31,7 +31,7 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "NurbsCurveMesh (2D Tape)")]
+    [ProcessNode(Name = "NurbsCurve (2d Mesh Tape)")]
     public class NurbsCurveTapeMeshNode2D : CurveTapeMeshNode<NurbsCurve<Vector2>>
     {
         public NurbsCurveTapeMeshNode2D()
@@ -55,7 +55,7 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "NurbsCurveMesh (3D Tape)")]
+    [ProcessNode(Name = "NurbsCurve (3d Mesh Tape)")]
     public class NurbsCurveTapeMeshNode3D : CurveTapeMeshNode<NurbsCurve<Vector3>>
     {
         public NurbsCurveTapeMeshNode3D()

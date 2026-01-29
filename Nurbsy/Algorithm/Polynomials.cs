@@ -142,7 +142,7 @@ namespace Nurbsy.Algorithm
         public static double[] AllBernstein(int degree, double paramT)
         {
             Validate.Argument(
-                degree < 0,
+                degree >= 0,
                 nameof(degree),
                 "Degree must be greater than zero or equal to zero."
             );

@@ -591,7 +591,8 @@
           <Node Bounds="523,420,70,19" Id="I0w0AZll8eMMXJUcEfIOqF">
             <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="NurbsCurve (2D)" />
+              <CategoryReference Kind="Category" Name="Nurbsy" />
+              <Choice Kind="ProcessAppFlag" Name="NurbsCurve (2d)" />
             </p:NodeReference>
             <Pin Id="NmP7AT0pxBuLFl35F4puKB" Name="Control Points" Kind="InputPin" />
             <Pin Id="FkiOlLOFMnIOGHgKh8v7Tm" Name="Degree" Kind="InputPin" DefaultValue="3" />

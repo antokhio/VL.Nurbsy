@@ -120,14 +120,15 @@
             <ControlPoint Id="N1bEYIe8ySfOo1vz0UyZww" Bounds="762,591" Alignment="Bottom" />
           </Node>
           <Node Bounds="406,549,101,19" Id="RAcDrpT8niEPpa0H5W20gL">
-            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
+            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy.Rendering" LastDependency="VL.Nurbsy.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="BezierSurfaceMesh (3D)" />
+              <CategoryReference Kind="Category" Name="Nurbsy" />
+              <CategoryReference Kind="Category" Name="Rendering" />
+              <Choice Kind="ProcessAppFlag" Name="BezierSurface (3d Mesh)" />
             </p:NodeReference>
             <Pin Id="A9QAifN91glPLm98xOoM3D" Name="Surface" Kind="InputPin" />
             <Pin Id="QtLQT5jDJOLMGQb8YMXYaH" Name="Tessellation" Kind="InputPin" />
             <Pin Id="Ou0H2Bc0srnNQcmLEH0fnH" Name="Output" Kind="OutputPin" />
-            <Pin Id="LZSblbnrluRNruPdZe05rZ" Name="Update" Kind="InputPin" />
           </Node>
           <Pad Id="UeR8UgNxmSJM6NsUioxC60" Comment="Tessellation" Bounds="456,500,35,28" ShowValueBox="true" isIOBox="true" Value="64, 64">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
@@ -199,7 +200,8 @@
           <Node Bounds="406,429,77,19" Id="IZ5olbd7eg1MMo27IYnWdG">
             <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="BezierSurface (3D)" />
+              <CategoryReference Kind="Category" Name="Nurbsy" />
+              <Choice Kind="ProcessAppFlag" Name="BezierSurface (3d)" />
             </p:NodeReference>
             <Pin Id="NMsWxJwz1xQMTt4BgiOEPz" Name="Control Points" Kind="InputPin" />
             <Pin Id="Imo1IMmAZOgPxOxnsnBQPT" Name="Degree" Kind="InputPin" />

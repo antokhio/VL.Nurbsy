@@ -41,7 +41,7 @@ namespace VL.Nurbsy
         }
     }
 
-    [ProcessNode(Name = "NurbsCurve (2D)")]
+    [ProcessNode(Name = "NurbsCurve (2d)")]
     public class NurbsCurveNode2D : NurbsCurveNodeXD<Vector2>
     {
         protected static readonly IReadOnlyList<Vector2> DefaultControlPoints =
@@ -70,7 +70,7 @@ namespace VL.Nurbsy
             new(DefaultDegree, DefaultControlPoints, DefaultKnots);
     }
 
-    [ProcessNode(Name = "NurbsCurve (3D)")]
+    [ProcessNode(Name = "NurbsCurve (3d)")]
     public class NurbsCurveNode3D : NurbsCurveNodeXD<Vector3>
     {
         protected static readonly IReadOnlyList<Vector3> DefaultControlPoints =

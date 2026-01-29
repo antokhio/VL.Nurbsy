@@ -5,13 +5,13 @@ using Stride.Rendering.ProceduralModels;
 using VL.Core.Import;
 using VL.Nurbsy.Helpers;
 
-namespace VL.Nurbsy
+namespace VL.Nurbsy.Rendering
 {
     /// <summary>
     /// 2D Nurbs surface mesh generator.
     /// Excludes normals computation.
     /// </summary>
-    [ProcessNode(Name = "NurbsSurfaceMesh (2D)")]
+    [ProcessNode(Name = "NurbsSurface (2d Mesh)")]
     public class NurbsSurfaceMeshNode2D : SurfaceMeshNode<NurbsSurface<Vector2>>
     {
         public NurbsSurfaceMeshNode2D()
@@ -32,7 +32,7 @@ namespace VL.Nurbsy
     /// 3D Bezier surface mesh generator.
     /// Includes normals computation.
     /// </summary>
-    [ProcessNode(Name = "NurbsSurfaceMesh (3D)")]
+    [ProcessNode(Name = "NurbsSurface (3d Mesh)")]
     public class NurbsSurfaceMeshNode3D : SurfaceMeshNode<NurbsSurface<Vector3>>
     {
         public NurbsSurfaceMeshNode3D()

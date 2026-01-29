@@ -89,62 +89,6 @@
             <ControlPoint Id="C9TW3nVW6YLOS1EKjiMBJe" Bounds="573,276" Alignment="Top" />
             <ControlPoint Id="HUjjg50irMeNRUVZ6YfbPh" Bounds="525,350" Alignment="Bottom" />
           </Node>
-          <Node Bounds="459,555,248,141" Id="UUKDGjOOujIQH65eXkzjxG">
-            <p:NodeReference LastCategoryFullName="Primitive" LastDependency="Builtin">
-              <Choice Kind="StatefulRegion" Name="Region (Stateful)" Fixed="true" />
-              <CategoryReference Kind="Category" Name="Primitive" />
-              <Choice Kind="ProcessStatefulRegion" Name="Cache" />
-            </p:NodeReference>
-            <Pin Id="TIIawr1q584NbHtinz94Wb" Name="Force" Kind="InputPin" />
-            <Pin Id="VU1sNa2QYYwMe9hgGZF9QW" Name="Dispose Cached Outputs" Kind="InputPin" />
-            <Pin Id="HOm436UvfShMkhw81JOwNd" Name="Has Changed" Kind="OutputPin" />
-            <Patch Id="GoiHn4IO6QyPn2DBVIG0Gw" ManuallySortedPins="true">
-              <Patch Id="QbKRL5XHmJjPAouKVoFHlR" Name="Create" ManuallySortedPins="true" />
-              <Patch Id="LERRdaFT6yKMUF7pxTHLo1" Name="Then" ManuallySortedPins="true" />
-              <Node Bounds="511,585,184,91" Id="Sl7tC1tfjOnLZVsEvH87tA">
-                <p:NodeReference LastCategoryFullName="Primitive" LastDependency="Builtin">
-                  <Choice Kind="StatefulRegion" Name="Region (Stateful)" Fixed="true" />
-                  <CategoryReference Kind="Category" Name="Primitive" />
-                  <Choice Kind="ApplicationStatefulRegion" Name="ForEach" />
-                </p:NodeReference>
-                <Pin Id="CLnsY0ddXnTQArgEkuhjyu" Name="Break" Kind="OutputPin" />
-                <Patch Id="HCCmtsuINwYPvfaG5ntYt9" ManuallySortedPins="true">
-                  <Patch Id="H4SXVarIMZWLpZTzOb4ok9" Name="Create" ManuallySortedPins="true" />
-                  <Patch Id="Hq4JSHuLRSDPV9x0WOQMvH" Name="Update" ManuallySortedPins="true" />
-                  <Patch Id="SGvR7JftRN7MxVGY3cqczE" Name="Dispose" ManuallySortedPins="true" />
-                  <Node Bounds="523,611,158,26" Id="CHivXAvVsxtPuZKeTvUdsh">
-                    <p:NodeReference LastCategoryFullName="Nurbsy.BezierCurve" LastDependency="VL.Nurbsy.vl">
-                      <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-                      <FullNameCategoryReference ID="Nurbsy.BezierCurve" />
-                      <Choice Kind="OperationCallFlag" Name="GetPointOnCurveByDeCasteljau" />
-                    </p:NodeReference>
-                    <Pin Id="FHieCtTjyzzQSdWFDGRKSs" Name="Input" Kind="StateInputPin" />
-                    <Pin Id="TgKzz0EN6gKPK6bYv87j3Q" Name="Param T" Kind="InputPin" />
-                    <Pin Id="IasUxNqLtsJNYnd3wj2aqP" Name="Output" Kind="OutputPin" IsHidden="true" />
-                    <Pin Id="VwS5K9RwCaHQanDm5NDXRd" Name="Result" Kind="OutputPin" />
-                  </Node>
-                </Patch>
-                <ControlPoint Id="CsqcrJZUXmnMoT2k7V32PO" Bounds="678,591" Alignment="Top" />
-                <ControlPoint Id="Ry0UKrZiO3gLdtWwO8ohqj" Bounds="525,670" Alignment="Bottom" />
-              </Node>
-            </Patch>
-            <ControlPoint Id="T0yXzEp5i2cM13rMRW8InZ" Bounds="525,561" Alignment="Top" />
-            <ControlPoint Id="FxBDJ6PxapJOhX0MCmk5k3" Bounds="678,561" Alignment="Top" />
-            <ControlPoint Id="VOhEoMlmCK4MVy2K92amm6" Bounds="525,690" Alignment="Bottom" />
-          </Node>
-          <Node Bounds="676,510,85,19" Id="EP52Ex2VA8sLtkHR5de4Sx">
-            <p:NodeReference LastCategoryFullName="Collections.Spread" LastDependency="VL.CoreLib.vl">
-              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="LinearSpread" />
-            </p:NodeReference>
-            <Pin Id="BL315760qVlPpNM2dbRRqp" Name="Node Context" Kind="InputPin" IsHidden="true" />
-            <Pin Id="HQQgQd7VTCXPz07DNGAYuI" Name="Center" Kind="InputPin" DefaultValue="0.5" />
-            <Pin Id="ETxBn0ErTR8P977X7HGPm8" Name="Width" Kind="InputPin" />
-            <Pin Id="DpyE8UXX5E0NvTI4m7mAIW" Name="Alignment" Kind="InputPin" DefaultValue="Block" />
-            <Pin Id="JewvWFiOKZBOEE5xFVsmko" Name="Phase" Kind="InputPin" />
-            <Pin Id="NiVG4DPYdxnNF2CHMhYoPq" Name="Count" Kind="InputPin" DefaultValue="32" />
-            <Pin Id="DfFVqZXScQ6P0eztdgy2Zt" Name="Output" Kind="OutputPin" />
-          </Node>
           <Node Bounds="523,850,105,19" Id="EyvKjtCC4h5OxQjqM15sFf">
             <p:NodeReference LastCategoryFullName="Graphics.Skia" LastDependency="VL.Skia.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
@@ -213,16 +157,6 @@
               <p:stringtype p:Assembly="VL.Core" p:Type="VL.Core.StringType">Comment</p:stringtype>
             </p:ValueBoxSettings>
           </Pad>
-          <Node Bounds="523,430,70,19" Id="M8UksmM1vZtLZ8LBVNlu0l">
-            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
-              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="BezierCurve (2D)" />
-            </p:NodeReference>
-            <Pin Id="EvDV260nctkOtbA3C320ib" Name="Control Points" Kind="InputPin" />
-            <Pin Id="IyhCh9ht52GNxhtAtU5FxU" Name="Degree" Kind="InputPin" />
-            <Pin Id="H2tKpmwsHlXLOSRkie9jDR" Name="Update" Kind="ApplyPin" />
-            <Pin Id="RZzg9R7oCjyP0Cqs4ST3wF" Name="Output" Kind="OutputPin" />
-          </Node>
           <Node Bounds="847,789,85,19" Id="UGLGSlGtdczL41K9Dmu05s">
             <p:NodeReference LastCategoryFullName="Graphics.Skia.Layers" LastDependency="VL.Skia.vl">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
@@ -276,6 +210,80 @@
             <Pin Id="KcAdr5cbCmKNpM2TKa4qkU" Name="Output" Kind="OutputPin" />
           </Node>
           <ControlPoint Id="PFustHLqwoRL90IFLq1j2Y" Bounds="849,481" />
+          <Node Bounds="523,440,70,19" Id="Dod4yWRmPSLNWsBnewY2Zu">
+            <p:NodeReference LastCategoryFullName="Nurbsy.Nurbsy" LastDependency="VL.Nurbsy.vl">
+              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+              <FullNameCategoryReference ID="Nurbsy.Nurbsy" />
+              <Choice Kind="ProcessAppFlag" Name="BezierCurve (2d)" />
+            </p:NodeReference>
+            <Pin Id="Kos2RTpyzTBLnKZhGb7ixA" Name="Control Points" Kind="InputPin" />
+            <Pin Id="DEkfmDbS3PPOTEkE5J5Z0T" Name="Degree" Kind="InputPin" />
+            <Pin Id="OjHOHt5HkVxOjykKYbe955" Name="Update" Kind="ApplyPin" />
+            <Pin Id="Tj7VYcmdSvmLyd2SAESXRV" Name="Output" Kind="OutputPin" />
+          </Node>
+          <Node Bounds="459,555,182,141" Id="GERDhD1TrziPdKsTLfLtxJ">
+            <p:NodeReference LastCategoryFullName="Primitive" LastDependency="Builtin">
+              <Choice Kind="StatefulRegion" Name="Region (Stateful)" Fixed="true" />
+              <CategoryReference Kind="Category" Name="Primitive" />
+              <Choice Kind="ProcessStatefulRegion" Name="Cache" />
+            </p:NodeReference>
+            <Pin Id="NA2TVNZLUr4OQ9jrf04fTQ" Name="Force" Kind="InputPin" />
+            <Pin Id="GgUPcUME5LhMiZ9gg3VJrT" Name="Dispose Cached Outputs" Kind="InputPin" />
+            <Pin Id="A8FdAmSs3o6OzwniLSFaZA" Name="Has Changed" Kind="OutputPin" />
+            <Patch Id="DYhXKToWuZVOxJAnhUuv0T" ManuallySortedPins="true">
+              <Patch Id="QMDG684vsnZMvgqSyPceMq" Name="Create" ManuallySortedPins="true" />
+              <Patch Id="NvA0x6anjiVLKv6eWTuZes" Name="Then" ManuallySortedPins="true" />
+              <Node Bounds="511,575,118,101" Id="R1imAjLsfkgMT8QI0LN7Le">
+                <p:NodeReference LastCategoryFullName="Primitive" LastDependency="Builtin">
+                  <Choice Kind="StatefulRegion" Name="Region (Stateful)" Fixed="true" />
+                  <CategoryReference Kind="Category" Name="Primitive" />
+                  <Choice Kind="ApplicationStatefulRegion" Name="ForEach" />
+                </p:NodeReference>
+                <Pin Id="HkVoa7LrZKGPFbrQd1NgEw" Name="Break" Kind="OutputPin" />
+                <Patch Id="HjnqGuBOnJkOLrpSHBL6m3" ManuallySortedPins="true">
+                  <Patch Id="DLnD7yGDJoqLZKEvbtBckq" Name="Create" ManuallySortedPins="true" />
+                  <Patch Id="MYTUQGgNo5FLv69KRzPPTy" Name="Update" ManuallySortedPins="true" />
+                  <Patch Id="BZw8Y4SzsEcLjz0kOaoyUk" Name="Dispose" ManuallySortedPins="true" />
+                  <Node Bounds="523,610,94,26" Id="HmdxLXniucHLdh2xUpCJwq">
+                    <p:NodeReference LastCategoryFullName="Nurbsy.BezierCurve" LastDependency="VL.Nurbsy.vl">
+                      <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+                      <FullNameCategoryReference ID="Nurbsy.BezierCurve" />
+                      <Choice Kind="OperationCallFlag" Name="GetPointOnCurve" />
+                    </p:NodeReference>
+                    <Pin Id="HSlHuf2c6PfQH5L6zKkt8W" Name="Input" Kind="StateInputPin" />
+                    <Pin Id="RBnw8mWCBTVNPFSi0NsodE" Name="Param T" Kind="InputPin" />
+                    <Pin Id="U97LpxEiuf9QCuStDyofkR" Name="Method" Kind="InputPin" />
+                    <Pin Id="RBuGV3fBzuVPCxINKsArbC" Name="Output" Kind="OutputPin" IsHidden="true" />
+                    <Pin Id="UGQHLKVXXWBLFzkuXOjWnR" Name="Result" Kind="OutputPin" />
+                  </Node>
+                </Patch>
+                <ControlPoint Id="OwwIZe2xtVqLl9qqldwyTn" Bounds="569,581" Alignment="Top" />
+                <ControlPoint Id="QY4sEAicmesLdRaklkfB3C" Bounds="525,670" Alignment="Bottom" />
+              </Node>
+            </Patch>
+            <ControlPoint Id="QVqRjMYgbwCNRVPpUWDpUv" Bounds="525,561" Alignment="Top" />
+            <ControlPoint Id="Ki8gg9DDcqxPBoiDpqkg2n" Bounds="569,561" Alignment="Top" />
+            <ControlPoint Id="IvQ5yWAheO6LLqy1cseXo8" Bounds="525,690" Alignment="Bottom" />
+            <ControlPoint Id="TxYrsEfX7I3OdOZRgD9BmD" Bounds="614,561" Alignment="Top" />
+          </Node>
+          <Node Bounds="567,510,85,19" Id="M3va7CIe92wM8zcahNCVve">
+            <p:NodeReference LastCategoryFullName="Collections.Spread" LastDependency="VL.CoreLib.vl">
+              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+              <Choice Kind="ProcessAppFlag" Name="LinearSpread" />
+            </p:NodeReference>
+            <Pin Id="UfGpyB4xQ6hNzHzgxJSVZt" Name="Node Context" Kind="InputPin" IsHidden="true" />
+            <Pin Id="SX4B3Xm6p4fOlsjmfKE64m" Name="Center" Kind="InputPin" DefaultValue="0.5" />
+            <Pin Id="FHALiW481S3MXXQbA5PMIg" Name="Width" Kind="InputPin" />
+            <Pin Id="OsEY7xD1vaQLimfZfWmhRX" Name="Alignment" Kind="InputPin" DefaultValue="Block" />
+            <Pin Id="R5zMXJ2esvsMdutfPnkLzJ" Name="Phase" Kind="InputPin" />
+            <Pin Id="UXTBiDCNrFNO4EbnbuhVBm" Name="Count" Kind="InputPin" DefaultValue="32" />
+            <Pin Id="ETaxGGXCpMVN8OGiuSeo4A" Name="Output" Kind="OutputPin" />
+          </Node>
+          <Pad Id="HFonWWSgfBoOKlOf5IPRfq" Comment="" Bounds="614,490,84,15" ShowValueBox="true" isIOBox="true" Value="Bernstein">
+            <p:TypeAnnotation LastCategoryFullName="Nurbsy" LastDependency="VL.Nurbsy.vl">
+              <Choice Kind="TypeFlag" Name="BezierEvaluation" />
+            </p:TypeAnnotation>
+          </Pad>
         </Canvas>
         <Patch Id="MzjIGlZtuzxO27nT9gNG6o" Name="Create" />
         <Patch Id="RAWgTV6Fgl0PlQgvlOsN3I" Name="Update" />
@@ -290,22 +298,24 @@
         <Link Id="Snp9oBXcbxGMbkp8Umgmlz" Ids="DAIjbxSY6w8QDBzJasnWCe,UuSYUhYBw2dLFf3ksXeJAJ" />
         <Link Id="DLWG910qdqdOnnxFcY9FE8" Ids="C9TW3nVW6YLOS1EKjiMBJe,JbXU4j6rHiFLRjRPxIDybR" />
         <Link Id="U4pqLAMJ5yKNMhBN7UKJMJ" Ids="ExYKj8kkYCSOngYt8W8u3L,HUjjg50irMeNRUVZ6YfbPh" />
-        <Link Id="H3uJhP9n092QI3cqm7Oye9" Ids="DfFVqZXScQ6P0eztdgy2Zt,FxBDJ6PxapJOhX0MCmk5k3" />
-        <Link Id="OCNE1yvF8GiLAO7p5xNW1a" Ids="FxBDJ6PxapJOhX0MCmk5k3,CsqcrJZUXmnMoT2k7V32PO" />
-        <Link Id="CohTenpfbdeMcURzxSu2DW" Ids="Ry0UKrZiO3gLdtWwO8ohqj,VOhEoMlmCK4MVy2K92amm6" />
         <Link Id="QNtFZXegN7HLso3HqznPku" Ids="KXLILeo5gxxOBybv6E1KcS,MhbPkLvwo6NOa7APaC1Lo8" />
         <Link Id="FJU1jrL0ZtKOgPmbVyTaBJ" Ids="Fbr5a3yED2CNpZcaFu9VTd,AVb9feAxcLyLKRzV4FQTLv" />
-        <Link Id="D6lEelWnPtbMbyfKYvB5w5" Ids="HUjjg50irMeNRUVZ6YfbPh,EvDV260nctkOtbA3C320ib" />
-        <Link Id="MgcetWS9ct2NtMdGgoGSPF" Ids="RZzg9R7oCjyP0Cqs4ST3wF,T0yXzEp5i2cM13rMRW8InZ" />
-        <Link Id="KKQtRjBtdshO43LG00h4fw" Ids="T0yXzEp5i2cM13rMRW8InZ,FHieCtTjyzzQSdWFDGRKSs" />
-        <Link Id="IKDvv38UwxnOLPvoKPvJot" Ids="CsqcrJZUXmnMoT2k7V32PO,TgKzz0EN6gKPK6bYv87j3Q" />
-        <Link Id="GTwmRcUevrPPd72Dug4zBp" Ids="VwS5K9RwCaHQanDm5NDXRd,Ry0UKrZiO3gLdtWwO8ohqj" />
         <Link Id="K9WtHNZpKNPNX0G6bygQ9X" Ids="HUjjg50irMeNRUVZ6YfbPh,PFustHLqwoRL90IFLq1j2Y,ONKKDXJvunoN0P6g4wvjV8" />
-        <Link Id="NJjH5NjpvzqQLcHB5CYRBf" Ids="VOhEoMlmCK4MVy2K92amm6,D6IzDVd9ldlLLz3vrkz06I" />
         <Link Id="BOYqvPTRwtYOeeqjkV3wFe" Ids="HobUcf80ZjvMkIiBN4cce6,SGCOARMe185LUAAPijOmYu" />
         <Link Id="RGVjswhS67ZN51AJFV3VnJ" Ids="TcDmayMiroCLIj1vVMIkkp,SWsKlcLWVh2PbUclIAfBtl" />
         <Link Id="So5evYARE1sMp6xKQgkQQb" Ids="CAGcg1qsMawPq4T5veDtsP,NX0sxlskEQVM1uSnksSky5" />
         <Link Id="VcjxHRw5dKNMkXLls78Com" Ids="KcAdr5cbCmKNpM2TKa4qkU,GlzpikG917wM4E3ik0wc4L" />
+        <Link Id="D36Ccun5CR1M2Wb3LQHFTj" Ids="HUjjg50irMeNRUVZ6YfbPh,Kos2RTpyzTBLnKZhGb7ixA" />
+        <Link Id="OtIFNDNTXFhNNxvQRDVTyf" Ids="ETaxGGXCpMVN8OGiuSeo4A,Ki8gg9DDcqxPBoiDpqkg2n" />
+        <Link Id="PvRQVV3xcuxMHjXggNaWN6" Ids="Ki8gg9DDcqxPBoiDpqkg2n,OwwIZe2xtVqLl9qqldwyTn" />
+        <Link Id="EoMzOZ03Y30LE86spA6eWv" Ids="QY4sEAicmesLdRaklkfB3C,IvQ5yWAheO6LLqy1cseXo8" />
+        <Link Id="BbSdqQOoFzyP0Vs7o1OPtb" Ids="QVqRjMYgbwCNRVPpUWDpUv,HSlHuf2c6PfQH5L6zKkt8W" />
+        <Link Id="GbCgDHKmabKNAicKz8WL2m" Ids="TxYrsEfX7I3OdOZRgD9BmD,U97LpxEiuf9QCuStDyofkR" />
+        <Link Id="RUahq6AjGfIM0UDkseMNRk" Ids="HFonWWSgfBoOKlOf5IPRfq,TxYrsEfX7I3OdOZRgD9BmD" />
+        <Link Id="K9pUODDRZVEL8PsNZJsskY" Ids="OwwIZe2xtVqLl9qqldwyTn,RBnw8mWCBTVNPFSi0NsodE" />
+        <Link Id="ObJ1Y7ssO8MQCwsLtUNF67" Ids="UGQHLKVXXWBLFzkuXOjWnR,QY4sEAicmesLdRaklkfB3C" />
+        <Link Id="LDq1P8LW3oDOv35xCk3qMh" Ids="Tj7VYcmdSvmLyd2SAESXRV,QVqRjMYgbwCNRVPpUWDpUv" />
+        <Link Id="BC9v6l9smL3MteMOPZOilV" Ids="IvQ5yWAheO6LLqy1cseXo8,D6IzDVd9ldlLLz3vrkz06I" />
       </Patch>
     </Node>
   </Patch>

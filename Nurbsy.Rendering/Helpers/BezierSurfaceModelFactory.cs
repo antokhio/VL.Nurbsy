@@ -35,7 +35,7 @@ namespace Nurbsy.Rendering.Helpers
                 }
             }
 
-            var indices = Triangulation.GenerateGridIndeciesCW(tX, tY);
+            var indices = Triangulation.GenerateGridIndicesCCW(tX, tY);
 
             return new GeometricMeshData<VertexPositionNormalTexture>(
                 vertices,
@@ -106,7 +106,7 @@ namespace Nurbsy.Rendering.Helpers
                 }
             }
 
-            var indices = Triangulation.GenerateGridIndeciesCW(tX, tY);
+            var indices = Triangulation.GenerateGridIndicesCCW(tX, tY);
 
             return new GeometricMeshData<VertexPositionNormalTexture>(
                 vertices,

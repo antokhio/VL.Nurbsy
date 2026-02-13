@@ -53,7 +53,8 @@ namespace Nurbsy.Rendering.Helpers
                 }
             }
 
-            var indices = Triangulation.GenerateGridIndeciesCW(tX, tY);
+            // Stride uses CCW for Front Faces by default.
+            var indices = Triangulation.GenerateGridIndicesCCW(tX, tY);
 
             return new GeometricMeshData<VertexPositionNormalTexture>(
                 vertices,
@@ -109,6 +110,7 @@ namespace Nurbsy.Rendering.Helpers
                     );
 
                     // Compute normal via cross product of partial derivatives
+                    // Reversed (sv x su) to match CW winding
                     var normal = Vector3.Cross(su, sv);
                     if (normal.LengthSquared() > 1e-8f)
                     {
@@ -128,7 +130,8 @@ namespace Nurbsy.Rendering.Helpers
                 }
             }
 
-            var indices = Triangulation.GenerateGridIndeciesCW(tX, tY);
+            // 3D Surfaces use CW indices to correct culling
+            var indices = Triangulation.GenerateGridIndicesCW(tX, tY);
 
             return new GeometricMeshData<VertexPositionNormalTexture>(
                 vertices,

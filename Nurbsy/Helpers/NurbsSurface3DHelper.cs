@@ -19,6 +19,76 @@ namespace Nurbsy.Helpers
 {
     public static class NurbsSurface3DHelper
     {
+        /// <inheritdoc cref="NurbsSurface{T}.GetCurveU(float)"/>
+        public static NurbsCurve<Vector3> GetIsoCurveU(in NurbsSurface<Vector3> surface, float u)
+        {
+            var degreeU = surface.DegreeU;
+            var knotsU = surface.KnotsU;
+            var controlPoints = surface.ControlPoints;
+
+            Validate.Range(u, knotsU[0], knotsU[knotsU.Count - 1], nameof(u));
+
+            int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, u);
+            double[] Nu = Polynomials.BasisFunctions(uSpanIndex, degreeU, knotsU, u);
+            int uind = uSpanIndex - degreeU;
+
+            int countV = controlPoints[0].Count;
+            var isoCps = new ControlPoint<Vector3>[countV];
+
+            for (int j = 0; j < countV; j++)
+            {
+                Vector3 weighted = Vector3.Zero;
+                double w = 0.0;
+                for (int k = 0; k <= degreeU; k++)
+                {
+                    var cp = controlPoints[uind + k][j];
+                    double bw = Nu[k] * cp.Weight;
+                    weighted += cp.Value * (float)bw;
+                    w += bw;
+                }
+                isoCps[j] = w != 0
+                    ? new ControlPoint<Vector3>(weighted / (float)w, w)
+                    : new ControlPoint<Vector3>(Vector3.Zero, 0.0);
+            }
+
+            return new NurbsCurve<Vector3>(surface.DegreeV, isoCps, surface.KnotsV);
+        }
+
+        /// <inheritdoc cref="NurbsSurface{T}.GetCurveV(float)"/>
+        public static NurbsCurve<Vector3> GetIsoCurveV(in NurbsSurface<Vector3> surface, float v)
+        {
+            var degreeV = surface.DegreeV;
+            var knotsV = surface.KnotsV;
+            var controlPoints = surface.ControlPoints;
+
+            Validate.Range(v, knotsV[0], knotsV[knotsV.Count - 1], nameof(v));
+
+            int vSpanIndex = Polynomials.GetKnotSpanIndex(degreeV, knotsV, v);
+            double[] Nv = Polynomials.BasisFunctions(vSpanIndex, degreeV, knotsV, v);
+            int vind = vSpanIndex - degreeV;
+
+            int countU = controlPoints.Count;
+            var isoCps = new ControlPoint<Vector3>[countU];
+
+            for (int i = 0; i < countU; i++)
+            {
+                Vector3 weighted = Vector3.Zero;
+                double w = 0.0;
+                for (int l = 0; l <= degreeV; l++)
+                {
+                    var cp = controlPoints[i][vind + l];
+                    double bw = Nv[l] * cp.Weight;
+                    weighted += cp.Value * (float)bw;
+                    w += bw;
+                }
+                isoCps[i] = w != 0
+                    ? new ControlPoint<Vector3>(weighted / (float)w, w)
+                    : new ControlPoint<Vector3>(Vector3.Zero, 0.0);
+            }
+
+            return new NurbsCurve<Vector3>(surface.DegreeU, isoCps, surface.KnotsU);
+        }
+
         /// <inheritdoc cref="NurbsSurface{T}.GetPointOnSurface(Vector2)"/>
         public static Vector3 GetPointOnSurface(in NurbsSurface<Vector3> surface, Vector2 uv)
         {
@@ -1707,50 +1777,17 @@ namespace Nurbsy.Helpers
 
             EquallyTessellate(in surface, out var tessellatedPoints, out var correspondingUVs, 50);
 
-            for (int i = 0; i < tessellatedPoints.Count - 1; i++)
+            // The tessellated points form a 2D grid flattened into a 1D list, so
+            // consecutive entries are not always geometric neighbours. A simple
+            // nearest-point search yields a valid starting parameter that the
+            // Newton-Raphson refinement below can then converge from.
+            for (int i = 0; i < tessellatedPoints.Count; i++)
             {
-                var currentUV = correspondingUVs[i];
-                var nextUV = correspondingUVs[i + 1];
-                var currentPoint = tessellatedPoints[i];
-                var nextPoint = tessellatedPoints[i + 1];
-
-                var vector1 = currentPoint - givenPoint;
-                var vector2 = nextPoint - currentPoint;
-                double dot = Vector3.Dot(vector1, vector2);
-
-                Vector3 projectPoint;
-                Vector2 projectUV;
-
-                if (dot < 0)
-                {
-                    projectPoint = currentPoint;
-                    projectUV = currentUV;
-                }
-                else if (dot > 1)
-                {
-                    projectPoint = nextPoint;
-                    projectUV = nextUV;
-                }
-                else
-                {
-                    float len = vector1.Length();
-                    if (MathUtils.IsZero(len))
-                    {
-                        projectPoint = currentPoint;
-                        projectUV = currentUV;
-                    }
-                    else
-                    {
-                        projectPoint = currentPoint + (float)dot * (vector1 / len);
-                        projectUV = currentUV + (nextUV - currentUV) * (float)dot;
-                    }
-                }
-
-                double distance = (givenPoint - projectPoint).Length();
+                double distance = (givenPoint - tessellatedPoints[i]).LengthSquared();
                 if (distance < minDistance)
                 {
                     minDistance = distance;
-                    param = projectUV;
+                    param = correspondingUVs[i];
                 }
             }
 
@@ -1786,9 +1823,11 @@ namespace Nurbsy.Helpers
                     return param;
                 }
 
-                // Compute Jacobian terms
-                double fuv = -Vector3.Dot(Su, difference);
-                double guv = -Vector3.Dot(Sv, difference);
+                // Compute Jacobian terms. The system to solve is
+                //   J * [du, dv]^T = -[fa, fb]^T
+                // where fa = Su . diff and fb = Sv . diff.
+                double fuv = Vector3.Dot(Su, difference);
+                double guv = Vector3.Dot(Sv, difference);
 
                 double fu = Vector3.Dot(Su, Su) + Vector3.Dot(difference, Suu);
                 double fv = Vector3.Dot(Su, Sv) + Vector3.Dot(difference, Suv);
@@ -1801,8 +1840,8 @@ namespace Nurbsy.Helpers
                     continue;
                 }
 
-                double deltaU = ((-fuv * gv) - fv * (-guv)) / det;
-                double deltaV = (fu * (-guv) - (-fuv) * gu) / det;
+                double deltaU = (-fuv * gv - fv * -guv) / det;
+                double deltaV = (fu * -guv - -fuv * gu) / det;
 
                 var temp = new Vector2(param.X + (float)deltaU, param.Y + (float)deltaV);
 

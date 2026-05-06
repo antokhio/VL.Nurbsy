@@ -141,6 +141,128 @@ namespace Nurbsy
         }
 
         /// <summary>
+        /// Samples the surface at a normalized arc-length coordinate <paramref name="uv"/> in [0,1]^2.
+        /// Unlike <see cref="GetPointOnSurface(Vector2)"/>, which uses raw NURBS parameters, this method
+        /// produces evenly spaced samples in world space (uniform UV parameters do not yield uniform
+        /// geometric spacing on a NURBS surface of degree &gt; 1).
+        /// </summary>
+        /// <param name="uv">Normalized arc-length coordinate. X and Y are expected in [0,1]; values are clamped.</param>
+        /// <returns>The point on the surface at the requested normalized arc-length location.</returns>
+        public T Sample(Vector2 uv)
+        {
+            float tu = Math.Clamp(uv.X, 0f, 1f);
+            float tv = Math.Clamp(uv.Y, 0f, 1f);
+
+            // Reference iso-curve along U, taken at the middle of the V domain,
+            // used to map normalized arc-length tu -> real surface parameter u.
+            float vRef = (float)((KnotsV[0] + KnotsV[KnotsV.Count - 1]) * 0.5);
+            var refCurveU = GetCurveV(vRef);
+            float u = (float)refCurveU.GetParamAt(tu);
+
+            // Iso-curve along V at the resolved u, used to map tv -> real surface parameter v.
+            var curveV = GetCurveU(u);
+            float v = (float)curveV.GetParamAt(tv);
+
+            return GetPointOnSurface(new Vector2(u, v));
+        }
+
+        /// <summary>
+        /// Batched version of <see cref="Sample(Vector2)"/>. Samples the surface at every
+        /// normalized arc-length coordinate in <paramref name="uvs"/>, reusing the reference U curve
+        /// and caching V iso-curves per unique normalized U so the work scales with the number of
+        /// distinct U columns rather than with the total number of samples.
+        /// </summary>
+        /// <param name="uvs">Normalized arc-length coordinates in [0,1]^2 (clamped).</param>
+        /// <returns>Array of sampled points, in the same order as <paramref name="uvs"/>.</returns>
+        public IReadOnlyList<T> Sample(IReadOnlyList<Vector2> uvs)
+        {
+            if (uvs == null)
+                throw new ArgumentNullException(nameof(uvs));
+
+            int count = uvs.Count;
+            var result = new T[count];
+            if (count == 0)
+                return result;
+
+            // Reference iso-curve along U, taken at the middle of the V domain.
+            float vRef = (float)((KnotsV[0] + KnotsV[KnotsV.Count - 1]) * 0.5);
+            var refCurveU = GetCurveV(vRef);
+
+            // Cache of (resolved u, V iso-curve) keyed by clamped normalized tu.
+            var curveCache = new Dictionary<float, (float U, NurbsCurve<T> Curve)>();
+
+            for (int i = 0; i < count; i++)
+            {
+                var uv = uvs[i];
+                float tu = Math.Clamp(uv.X, 0f, 1f);
+                float tv = Math.Clamp(uv.Y, 0f, 1f);
+
+                if (!curveCache.TryGetValue(tu, out var entry))
+                {
+                    float u = (float)refCurveU.GetParamAt(tu);
+                    var curveV = GetCurveU(u);
+                    entry = (u, curveV);
+                    curveCache[tu] = entry;
+                }
+
+                float v = (float)entry.Curve.GetParamAt(tv);
+                result[i] = GetPointOnSurface(new Vector2(entry.U, v));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Extracts an iso-parametric curve at a fixed U value (varying along V).
+        /// The returned curve is mathematically identical to the surface evaluated along the V direction at U = <paramref name="u"/>.
+        /// </summary>
+        /// <param name="u">The fixed U parameter at which to extract the curve.</param>
+        /// <returns>A <see cref="NurbsCurve{T}"/> of degree <see cref="DegreeV"/> with knot vector <see cref="KnotsV"/>.</returns>
+        public NurbsCurve<T> GetCurveU(float u)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.GetIsoCurveU(in surface, u);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.GetIsoCurveU(in surface, u);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
+        /// Extracts an iso-parametric curve at a fixed V value (varying along U).
+        /// The returned curve is mathematically identical to the surface evaluated along the U direction at V = <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">The fixed V parameter at which to extract the curve.</param>
+        /// <returns>A <see cref="NurbsCurve{T}"/> of degree <see cref="DegreeU"/> with knot vector <see cref="KnotsU"/>.</returns>
+        public NurbsCurve<T> GetCurveV(float v)
+        {
+            if (typeof(T) == typeof(Vector2))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref this);
+                var result = NurbsSurface2DHelper.GetIsoCurveV(in surface, v);
+                return Unsafe.As<NurbsCurve<Vector2>, NurbsCurve<T>>(ref result);
+            }
+
+            if (typeof(T) == typeof(Vector3))
+            {
+                ref var surface = ref Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref this);
+                var result = NurbsSurface3DHelper.GetIsoCurveV(in surface, v);
+                return Unsafe.As<NurbsCurve<Vector3>, NurbsCurve<T>>(ref result);
+            }
+
+            throw new NotSupportedException($"Type {typeof(T)} is not supported.");
+        }
+
+        /// <summary>
         /// The NURBS Book 2nd Edition Page111
         /// Algorithm A3.6
         /// Compute surface derivatives.
@@ -757,7 +879,7 @@ namespace Nurbsy
         /// <summary>
         /// The NURBS Book 2nd Edition Page232
         /// Point inversion:finding the corresponding parameter make S(u,v) = P.
-        /// Find the UV parameter on the surface closest to the given point.
+        /// Find the UV parameter on the surface closest to the given <b>world point</b>.
         /// Uses Newton-Raphson iteration with an initial guess from tessellation.
         /// </summary>
         /// <param name="givenPoint">The point to find the closest parameter for.</param>
@@ -799,8 +921,8 @@ namespace Nurbsy
         }
 
         /// <summary>
-        /// Find the UV parameter on the surface closest to the given point using
-        /// a Geometric Surface Algorithm (GSA) that utilizes surface curvature.
+        /// Find the UV parameter on the surface closest to the given  <b>world point</b>
+        /// using a Geometric Surface Algorithm (GSA) that utilizes surface curvature.
         /// This method may converge better than Newton-Raphson for some cases.
         /// Experimental:
         /// According to https://jcst.ict.ac.cn/fileup/1000-9000/PDF/2019-6-9-9388.pdf

@@ -163,11 +163,17 @@ namespace Nurbsy.Helpers
                 derivatives[i] = new Vector3[derivative + 1];
             }
 
+            // Clamp the requested basis-function derivative order to the surface degree.
+            // Higher-order derivatives of a polynomial of lower degree are identically zero,
+            // so leaving the corresponding entries in `derivatives` at Vector3.Zero is correct.
+            int du = Math.Min(derivative, degreeU);
+            int dv = Math.Min(derivative, degreeV);
+
             int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, uv.X);
             double[][] Nu = Polynomials.BasisFunctionsDerivatives(
                 uSpanIndex,
                 degreeU,
-                derivative,
+                du,
                 knotsU,
                 uv.X
             );
@@ -176,13 +182,10 @@ namespace Nurbsy.Helpers
             double[][] Nv = Polynomials.BasisFunctionsDerivatives(
                 vSpanIndex,
                 degreeV,
-                derivative,
+                dv,
                 knotsV,
                 uv.Y
             );
-
-            int du = Math.Min(derivative, degreeU);
-            int dv = Math.Min(derivative, degreeV);
 
             var temp = new Vector3[degreeV + 1];
 
@@ -484,12 +487,19 @@ namespace Nurbsy.Helpers
             // Aders = weighted position derivatives (reuse existing ComputeDerivatives)
             var Aders = ComputeDerivatives(in surface, derivative, uv);
 
+            // Clamp basis-function derivative order to the surface degree to avoid
+            // requesting derivatives higher than the polynomial degree (which is invalid).
+            // Weight derivatives beyond the degree are identically zero, matching the
+            // Aders convention used above.
+            int du = Math.Min(derivative, degreeU);
+            int dv = Math.Min(derivative, degreeV);
+
             // Compute wders (weight derivatives) separately
             int uSpanIndex = Polynomials.GetKnotSpanIndex(degreeU, knotsU, uv.X);
             double[][] Nu = Polynomials.BasisFunctionsDerivatives(
                 uSpanIndex,
                 degreeU,
-                derivative,
+                du,
                 knotsU,
                 uv.X
             );
@@ -498,13 +508,10 @@ namespace Nurbsy.Helpers
             double[][] Nv = Polynomials.BasisFunctionsDerivatives(
                 vSpanIndex,
                 degreeV,
-                derivative,
+                dv,
                 knotsV,
                 uv.Y
             );
-
-            int du = Math.Min(derivative, degreeU);
-            int dv = Math.Min(derivative, degreeV);
 
             var wders = new double[derivative + 1][];
             for (int i = 0; i <= derivative; i++)

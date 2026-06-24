@@ -8,9 +8,9 @@
     <owners>antokhio</owners>
     <projectUrl>https://github.com/antokhio/VL.Nurbsy</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <summary>NURBS Bezier library for vvvv and Stride, based on LNLib by BIMCoderLiang.</summary>
+    <summary>NURBS Bezier library for Stride, based on LNLib by BIMCoderLiang.</summary>
     <description>Brings LNLib NURBS and Bezier algorithms to the native C# domain using Stride Mathematics.</description>
-    <tags>vl, vvvv, gamma, nurbs, stride, stride3d, skia</tags>
+    <tags>nurbs, stride, stride3d, skia</tags>
     <readme>README.md</readme>
 	  <license type="file">LICENSE</license>
 	  <icon>icon\icon.png</icon>

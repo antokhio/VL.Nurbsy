@@ -1,7 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".nuget/Nurbsy.nuspec" />
-    <File Path=".nuget/VL.Nurbsy.nuspec" />
+    <File Path="Directory.Packages.props" />
     <File Path="LICENSE" />
     <File Path="NOTICE" />
     <File Path="README.MD" />

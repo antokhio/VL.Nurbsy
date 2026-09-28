@@ -54,16 +54,18 @@ namespace Nurbsy.Rendering.Helpers
 
     /// <summary>
     /// Caches the arc-length lookup tables used to correct tessellation compression for a
-    /// <see cref="NurbsSurface{T}"/>. The cache is rebuilt only when the surface's structural
-    /// "shape" (degree and control point grid dimensions) changes, not when only control point
-    /// positions move. This trades a small amount of arc-length accuracy under animated control
-    /// points for a large reduction in per-frame CPU cost, since the expensive arc-length
-    /// integration is skipped as long as the topology stays the same.
+    /// <see cref="NurbsSurface{T}"/>. The cache is rebuilt whenever the control net, the knot
+    /// vectors, the degrees or the resolution change. Change detection uses reference equality on
+    /// the (immutable) control point and knot collections, so an unchanged surface reuses the
+    /// tables while any edit produces exactly the same result as a freshly built cache.
     /// </summary>
     public sealed class NurbsSurfaceArcLengthCache<T>
         where T : struct
     {
-        private (int DegreeU, int DegreeV, int CountU, int CountV)? _signature;
+        private object _controlPoints;
+        private object _knotsU;
+        private object _knotsV;
+        private (int DegreeU, int DegreeV, int Resolution)? _signature;
 
         public int Resolution { get; set; } = ArcLengthLut.DefaultResolution;
 
@@ -71,19 +73,23 @@ namespace Nurbsy.Rendering.Helpers
         public ArcLengthLut VLut { get; private set; }
 
         /// <summary>
-        /// Returns the cached lookup tables, rebuilding them first if the surface's degree or
-        /// control point grid dimensions changed since the last call.
+        /// Returns the cached lookup tables, rebuilding them first if the surface's control net,
+        /// knots, degrees or the resolution changed since the last call.
         /// </summary>
         public void GetOrBuild(in NurbsSurface<T> surface)
         {
-            int countU = surface.ControlPoints.Count;
-            int countV = countU > 0 ? surface.ControlPoints[0].Count : 0;
-            var signature = (surface.DegreeU, surface.DegreeV, countU, countV);
+            var signature = (surface.DegreeU, surface.DegreeV, Resolution);
 
-            if (ULut == null || VLut == null || _signature != signature)
+            if (ULut == null || VLut == null || _signature != signature
+                || !ReferenceEquals(_controlPoints, surface.ControlPoints)
+                || !ReferenceEquals(_knotsU, surface.KnotsU)
+                || !ReferenceEquals(_knotsV, surface.KnotsV))
             {
                 Rebuild(surface);
                 _signature = signature;
+                _controlPoints = surface.ControlPoints;
+                _knotsU = surface.KnotsU;
+                _knotsV = surface.KnotsV;
             }
         }
 

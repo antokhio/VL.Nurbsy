@@ -11,10 +11,8 @@ namespace VL.Nurbsy.Rendering
     /// <summary>
     /// 2D Nurbs surface mesh generator.
     /// Excludes normals computation.
-    /// Uses the exact arc-length parametrization (see <see cref="NurbsSurface{T}.Sample(Vector2)"/>)
-    /// to avoid tessellation compression, recomputed in full whenever the surface changes. Heavier
-    /// on CPU than the "(Cached) (Experimental)" variant, which is preferable when control points
-    /// are animated every frame and this cost becomes a bottleneck.
+    /// Texture coordinates follow the control net (see <see cref="TextureParametrization"/>).
+    /// Recomputes the tessellation parameters on every change; prefer "NurbsSurface (2d Mesh)".
     /// </summary>
     [ProcessNode(Name = "NurbsSurface (2d Mesh Obsolete)")]
     public class NurbsSurfaceMeshNode2D : SurfaceMeshNode<NurbsSurface<Vector2>>
@@ -36,10 +34,8 @@ namespace VL.Nurbsy.Rendering
     /// <summary>
     /// 3D Nurbs surface mesh generator.
     /// Includes normals computation.
-    /// Uses the exact arc-length parametrization (see <see cref="NurbsSurface{T}.Sample(Vector2)"/>)
-    /// to avoid tessellation compression, recomputed in full whenever the surface changes. Heavier
-    /// on CPU than the "(Cached) (Experimental)" variant, which is preferable when control points
-    /// are animated every frame and this cost becomes a bottleneck.
+    /// Texture coordinates follow the control net (see <see cref="TextureParametrization"/>).
+    /// Recomputes the tessellation parameters on every change; prefer "NurbsSurface (3d Mesh)".
     /// </summary>
     [ProcessNode(Name = "NurbsSurface (3d Mesh Obsolete)")]
     public class NurbsSurfaceMeshNode3D : SurfaceMeshNode<NurbsSurface<Vector3>>
@@ -59,18 +55,17 @@ namespace VL.Nurbsy.Rendering
     }
 
     /// <summary>
-    /// Experimental, cached fast-path 2D Nurbs surface mesh generator.
+    /// 2D Nurbs surface mesh generator.
     /// Excludes normals computation.
-    /// Caches the arc-length lookup tables used to correct tessellation compression and only
-    /// rebuilds them when the surface's degree or control point grid dimensions change - not on
-    /// every control point position update. This makes it much cheaper for animated control
-    /// points, at the cost of assuming the V-direction arc length is roughly constant across all
-    /// U columns (see <see cref="NurbsSurfaceArcLengthCache{T}"/>).
+    /// Texture coordinates follow the control net (see <see cref="TextureParametrization"/>):
+    /// moving a control point drags its part of the texture, while an evenly spaced grid gives an
+    /// uncompressed texture. Tessellation parameters are cached and only rebuilt when degree,
+    /// knots or grid dimensions change (see <see cref="NurbsSurfaceParamCache{T}"/>).
     /// </summary>
     [ProcessNode(Name = "NurbsSurface (2d Mesh)")]
     public class NurbsSurfaceMeshNode2DCached : SurfaceMeshNode<NurbsSurface<Vector2>>
     {
-        private readonly NurbsSurfaceArcLengthCache<Vector2> _cache = new();
+        private readonly NurbsSurfaceParamCache<Vector2> _cache = new();
 
         public NurbsSurfaceMeshNode2DCached()
             : base(NurbsSurfaceNode2D.CreateDefault()) { }
@@ -92,18 +87,17 @@ namespace VL.Nurbsy.Rendering
     }
 
     /// <summary>
-    /// Experimental, cached fast-path 3D Nurbs surface mesh generator.
+    /// 3D Nurbs surface mesh generator.
     /// Includes normals computation.
-    /// Caches the arc-length lookup tables used to correct tessellation compression and only
-    /// rebuilds them when the surface's degree or control point grid dimensions change - not on
-    /// every control point position update. This makes it much cheaper for animated control
-    /// points, at the cost of assuming the V-direction arc length is roughly constant across all
-    /// U columns (see <see cref="NurbsSurfaceArcLengthCache{T}"/>).
+    /// Texture coordinates follow the control net (see <see cref="TextureParametrization"/>):
+    /// moving a control point drags its part of the texture, while an evenly spaced grid gives an
+    /// uncompressed texture. Tessellation parameters are cached and only rebuilt when degree,
+    /// knots or grid dimensions change (see <see cref="NurbsSurfaceParamCache{T}"/>).
     /// </summary>
     [ProcessNode(Name = "NurbsSurface (3d Mesh)")]
     public class NurbsSurfaceMeshNode3DCached : SurfaceMeshNode<NurbsSurface<Vector3>>
     {
-        private readonly NurbsSurfaceArcLengthCache<Vector3> _cache = new();
+        private readonly NurbsSurfaceParamCache<Vector3> _cache = new();
 
         public NurbsSurfaceMeshNode3DCached()
             : base(NurbsSurfaceNode3D.CreateDefault()) { }

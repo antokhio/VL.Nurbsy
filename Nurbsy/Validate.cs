@@ -5,7 +5,7 @@
  * Original Author:
  * 2023 - Yuqing Liang (BIMCoder Liang)
  *
- * Based on LNLib: https://github.com/BIMCoderLiang/LNLib
+ * Based on LNLib: https://github.com/BIMCoderLiang/LNLib3
  *
  * Use of this source code is governed by a LGPL-2.1 license that can be found in
  * the LICENSE file.

@@ -44,11 +44,11 @@ namespace Nurbsy.Rendering
     }
 
     /// <summary>
-    /// Experimental, cached fast-path variant of <see cref="NurbsSurfaceModel{T}"/>. Reuses a
-    /// <see cref="NurbsSurfaceArcLengthCache{T}"/> supplied by the caller (typically owned by a
-    /// long-lived node instance) so the arc-length correction is only recomputed when the
-    /// surface's degree or control point grid dimensions change, not every time control point
-    /// positions are updated (e.g. animation).
+    /// Cached variant of <see cref="NurbsSurfaceModel{T}"/>. Reuses a
+    /// <see cref="NurbsSurfaceParamCache{T}"/> supplied by the caller (typically owned by a
+    /// long-lived node instance) so the tessellation parameters are only recomputed when the
+    /// surface's degree, knots or control point grid dimensions change, not every time control
+    /// point positions are updated (e.g. animation).
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class NurbsSurfaceModelCached<T> : PrimitiveProceduralModelBase
@@ -58,12 +58,12 @@ namespace Nurbsy.Rendering
 
         public Int2 Tesselation { get; set; }
 
-        public NurbsSurfaceArcLengthCache<T> Cache { get; }
+        public NurbsSurfaceParamCache<T> Cache { get; }
 
         public NurbsSurfaceModelCached(
             NurbsSurface<T> surface,
             Int2 tesselation,
-            NurbsSurfaceArcLengthCache<T> cache
+            NurbsSurfaceParamCache<T> cache
         )
         {
             Surface = surface;
@@ -77,7 +77,7 @@ namespace Nurbsy.Rendering
             {
                 var surfaceT = Surface;
                 var surface = Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector2>>(ref surfaceT);
-                var cache = (NurbsSurfaceArcLengthCache<Vector2>)(object)Cache;
+                var cache = (NurbsSurfaceParamCache<Vector2>)(object)Cache;
                 return NurbsSurfaceModelFactory.GenerateMeshDataCached(surface, Tesselation, cache);
             }
 
@@ -85,7 +85,7 @@ namespace Nurbsy.Rendering
             {
                 var surfaceT = Surface;
                 var surface = Unsafe.As<NurbsSurface<T>, NurbsSurface<Vector3>>(ref surfaceT);
-                var cache = (NurbsSurfaceArcLengthCache<Vector3>)(object)Cache;
+                var cache = (NurbsSurfaceParamCache<Vector3>)(object)Cache;
                 return NurbsSurfaceModelFactory.GenerateMeshDataCached(surface, Tesselation, cache);
             }
 

@@ -3,7 +3,7 @@
   <metadata>
     <id>VL.Nurbsy</id>
     <title>VL.Nurbsy</title>
-    <version>0.0.0</version>
+    <version>$version$</version>
     <authors>antokhio, BIMCoderLiang</authors>
     <owners>antokhio</owners>
     <projectUrl>https://github.com/antokhio/VL.Nurbsy</projectUrl>

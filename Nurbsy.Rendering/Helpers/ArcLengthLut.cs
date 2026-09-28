@@ -62,9 +62,9 @@ namespace Nurbsy.Rendering.Helpers
     public sealed class NurbsSurfaceArcLengthCache<T>
         where T : struct
     {
-        private object _controlPoints;
-        private object _knotsU;
-        private object _knotsV;
+        private object? _controlPoints;
+        private object? _knotsU;
+        private object? _knotsV;
         private (int DegreeU, int DegreeV, int Resolution)? _signature;
 
         public int Resolution { get; set; } = ArcLengthLut.DefaultResolution;

@@ -4,12 +4,18 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: Package version (with or without a leading v)
+        required: true
+        type: string
 
 jobs: 
   build:
     runs-on: windows-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
@@ -30,10 +36,14 @@ jobs:
       - name: Extract version and detect pre-release
         id: version
         run: |
-          $version = "${{ github.ref_name }}"
-          $cleanVersion = $version.Substring(1)
+          $version = if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            "${{ inputs.version }}"
+          } else {
+            "${{ github.ref_name }}"
+          }
+          $cleanVersion = $version.TrimStart("v")
 
-          $isPrerelease = $cleanVersion -match "[\-+]"
+          $isPrerelease = $cleanVersion -match "-"
 
           echo "VERSION=$cleanVersion" >> $env:GITHUB_ENV
           echo "IS_PRERELEASE=$isPrerelease" >> $env:GITHUB_ENV
@@ -43,12 +53,18 @@ jobs:
           nuget pack .nuget\Nurbsy.nuspec -Version ${{ env.VERSION }} -OutputDirectory .\packages
           nuget pack .nuget\VL.Nurbsy.nuspec -Version ${{ env.VERSION }} -OutputDirectory .\packages
 
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: antokhio
+
       - name: Publish to NuGet.org
         run: |
           Write-Host "Publishing to NuGet.org..."
           foreach ($package in Get-ChildItem -Path ./packages -Filter *.nupkg) {
-            dotnet nuget push $package `
-              --api-key ${{ secrets.NUGET_KEY }} `
+            dotnet nuget push $package.FullName `
+              --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
               --source https://api.nuget.org/v3/index.json `
               --skip-duplicate
           }
